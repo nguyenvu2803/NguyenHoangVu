@@ -23,3 +23,23 @@ Mục tiêu 7–10 phút, quay ứng dụng Flutter Android. Chỉ mô tả kế
 9. **08:00–08:30 — Kết thúc.** Hiển thị link GitHub frontend/backend, API và `hovaten.txt`. Nói rõ phần đã làm/đã nghiệm thu và phần còn giới hạn, không đọc điểm dự kiến thành điểm được giảng viên chấm.
 
 Sau khi tải video lên YouTube, mở thử link ở cửa sổ chưa đăng nhập; cập nhật cùng URL vào `hovaten.txt` và `docs/NOP_BAI.md`. Không điền URL video giả.
+
+## Máy ảo đang chuẩn bị trên máy này
+
+AVD `NguyenHoangVu_QA` dùng Android 13/API 33, màn hình 720×1280, host OpenGL. APK production đã cài và xác thực OTP email thật. Tài khoản đang chờ admin; sau khi được duyệt, nhấn **Kiểm tra trạng thái duyệt** để vào app. Không dùng AVD Android 36 cũ đang gặp lỗi System UI.
+
+Camera mặc định của AVD là ảnh mô phỏng. Để quay khuôn mặt người dùng hoặc quét QR bằng webcam, cần đóng máy ảo sau khi đã giữ thông tin đăng nhập riêng rồi mở lại với camera thật của máy tính. Lần mở lại app yêu cầu đăng nhập/OTP lại. Trên macOS, kiểm tra tên webcam trước:
+
+```sh
+"$HOME/Library/Android/sdk/emulator/emulator" -webcam-list
+```
+
+Nếu có `webcam0`, chạy:
+
+```sh
+"$HOME/Library/Android/sdk/emulator/emulator" -avd NguyenHoangVu_QA -gpu host -feature -Vulkan -no-snapshot -camera-front webcam0 -camera-back webcam0
+```
+
+Chủ máy tự cho phép quyền camera nếu macOS hỏi. Chưa nghiệm thu webcam ở phiên máy ảo hiện tại; không đọc khuôn mặt fixture thành bằng chứng camera người dùng thật. GPS máy ảo cũng là dữ liệu vị trí mô phỏng; nói rõ trong video. Không tắt kiểm tra `isMocked` của APK production để làm video trông như GPS điện thoại thật. Nếu app từ chối nguồn vị trí/camera của máy ảo, phần đó cần nghiệm thu trên thiết bị có nguồn hợp lệ.
+
+Mật khẩu tài khoản được tạo ngẫu nhiên và giữ riêng trên máy, ngoài gói nộp/Git. Không quay file thông tin tài khoản hoặc mã OTP.
