@@ -59,7 +59,12 @@ class _EditorState extends State<_Editor> {
     controls = {
       for (final field in widget.fields)
         field.keyName: TextEditingController(
-          text: widget.initial[field.keyName]?.toString() ?? '',
+          text:
+              field.type == 'datetime' && widget.initial[field.keyName] != null
+              ? DateTime.parse(
+                  widget.initial[field.keyName].toString(),
+                ).toLocal().toIso8601String()
+              : widget.initial[field.keyName]?.toString() ?? '',
         ),
     };
   }
@@ -84,9 +89,11 @@ class _EditorState extends State<_Editor> {
         final text = field.type == 'password'
             ? controls[field.keyName]!.text
             : controls[field.keyName]!.text.trim();
+        if (text.isEmpty && !field.required) continue;
         result[field.keyName] = switch (field.type) {
           'int' || 'selectInt' => int.parse(text),
           'double' => double.parse(text),
+          'datetime' => DateTime.parse(text).toUtc().toIso8601String(),
           _ => text,
         };
       }
@@ -151,7 +158,9 @@ class _EditorState extends State<_Editor> {
                           enabled: !busy,
                           obscureText: field.type == 'password',
                           readOnly:
-                              field.type == 'date' || field.type == 'time',
+                              field.type == 'date' ||
+                              field.type == 'time' ||
+                              field.type == 'datetime',
                           maxLines: field.type == 'multiline' ? 3 : 1,
                           keyboardType: ['int', 'double'].contains(field.type)
                               ? const TextInputType.numberWithOptions(
@@ -182,7 +191,37 @@ class _EditorState extends State<_Editor> {
                                   : 128,
                             ),
                           ],
-                          onTap: field.type == 'date'
+                          onTap: field.type == 'datetime'
+                              ? () async {
+                                  final current =
+                                      DateTime.tryParse(
+                                        controls[field.keyName]!.text,
+                                      )?.toLocal() ??
+                                      DateTime.now();
+                                  final date = await showDatePicker(
+                                    context: context,
+                                    firstDate: DateTime(2020),
+                                    lastDate: DateTime(2100),
+                                    initialDate: current,
+                                  );
+                                  if (date == null || !context.mounted) return;
+                                  final time = await showTimePicker(
+                                    context: context,
+                                    initialTime: TimeOfDay.fromDateTime(
+                                      current,
+                                    ),
+                                  );
+                                  if (time != null) {
+                                    controls[field.keyName]!.text = DateTime(
+                                      date.year,
+                                      date.month,
+                                      date.day,
+                                      time.hour,
+                                      time.minute,
+                                    ).toIso8601String();
+                                  }
+                                }
+                              : field.type == 'date'
                               ? () async {
                                   final first = DateTime.now().subtract(
                                     const Duration(days: 365),

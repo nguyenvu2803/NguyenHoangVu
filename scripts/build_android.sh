@@ -16,6 +16,8 @@ if url.scheme != 'https' or not url.hostname or 'your-' in url.hostname.lower() 
     raise SystemExit('API_BASE_URL must be a real deployed HTTPS URL')
 if str(config.get('DEMO_MODE', '')).lower() != 'false':
     raise SystemExit('DEMO_MODE must be false for the submitted application')
+if str(config.get('SHOW_DEMO', '')).lower() != 'false':
+    raise SystemExit('SHOW_DEMO must be false for the submitted application')
 if str(config.get('ALLOW_INSECURE_DEV', '')).lower() != 'false':
     raise SystemExit('ALLOW_INSECURE_DEV must be false for the submitted application')
 subprocess.run([sys.executable, '../scripts/check_deployment.py', config['API_BASE_URL']], check=True)

@@ -14,6 +14,7 @@ class Session extends ChangeNotifier {
   final biometrics = LocalAuthentication();
   Session(this.api) {
     api.onTokenRotation = syncBiometricToken;
+    api.onSessionExpired = clear;
   }
   bool get isAdmin => user?['role'] == 'admin';
   bool get isCustomer => user?['role'] == 'customer';
@@ -84,7 +85,7 @@ class Session extends ChangeNotifier {
     );
     if (!ok) return;
     final result = await api.request('POST', '/auth/refresh', {
-      'refresh_token': token,
+      'refreshToken': token,
     });
     await accept(result);
     await storage.write(key: 'biometric_refresh', value: api.refreshToken);
@@ -107,20 +108,33 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> logout() async {
-    if (api.refreshToken != null) {
-      await api.request('POST', '/auth/logout', {
-        'refresh_token': api.refreshToken,
-      });
-    }
+  Future<void> clear() async {
+    user = null;
+    api.accessToken = null;
+    api.refreshToken = null;
+    notifyListeners();
     if (!api.demo && !kIsWeb) {
       await storage.delete(key: 'biometric_refresh');
       await storage.delete(key: 'biometric_user_id');
     }
-    user = null;
-    api.accessToken = null;
-    api.refreshToken = null;
-    api.demo = const bool.fromEnvironment('DEMO_MODE');
+  }
+
+  Future<void> reloadUser() async {
+    user = Json.from(await api.request('GET', '/me'));
     notifyListeners();
+  }
+
+  Future<void> logout() async {
+    final token = api.refreshToken;
+    try {
+      if (token != null) {
+        await api.request('POST', '/auth/logout', {
+          api.demo ? 'refresh_token' : 'refreshToken': token,
+        });
+      }
+    } finally {
+      await clear();
+      api.demo = const bool.fromEnvironment('DEMO_MODE');
+    }
   }
 }

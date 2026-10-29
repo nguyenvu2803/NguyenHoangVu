@@ -7,24 +7,34 @@ typedef Json = Map<String, dynamic>;
 class ApiException implements Exception {
   final String message;
   final int status;
-  ApiException(this.message, [this.status = 0]);
+  final String? code;
+  ApiException(this.message, [this.status = 0, this.code]);
   @override
   String toString() => message;
 }
 
 class Api {
-  static const baseUrl = String.fromEnvironment('API_BASE_URL');
+  static const baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://nguyen-hoai-nam-2380601398-api.onrender.com/v1',
+  );
   static const allowInsecure = bool.fromEnvironment('ALLOW_INSECURE_DEV');
-  // Render Free may need over a minute to wake after inactivity.
   static const connectionTimeout = Duration(seconds: 90);
+  final String endpoint;
+  final http.Client client;
+  final Duration timeout;
+  Api({String? endpoint, http.Client? client, this.timeout = connectionTimeout})
+    : endpoint = (endpoint ?? baseUrl).replaceAll(RegExp(r'/$'), ''),
+      client = client ?? http.Client();
   bool demo = const bool.fromEnvironment('DEMO_MODE');
   final DemoStore demoStore = DemoStore();
   String? accessToken;
   String? refreshToken;
   Future<void> Function()? onTokenRotation;
-  Future<dynamic>? _refreshing;
+  Future<void> Function()? onSessionExpired;
+  Future<void>? _refreshing;
   bool get configured {
-    final uri = Uri.tryParse(baseUrl);
+    final uri = Uri.tryParse(endpoint);
     return uri != null &&
         uri.host.isNotEmpty &&
         (uri.scheme == 'https' || (allowInsecure && uri.scheme == 'http'));
@@ -37,82 +47,91 @@ class Api {
     bool retry = true,
   ]) async {
     if (demo) return demoStore.request(method, path, body);
-    if (!configured) {
-      throw ApiException(
-        'Chưa cấu hình API HTTPS. Xem hướng dẫn deploy hoặc mở bản demo.',
-      );
-    }
-    final url = Uri.parse('${baseUrl.replaceAll(RegExp(r'/$'), '')}$path');
-    final request = http.Request(method, url);
+    if (!configured) throw ApiException('Cần cấu hình API HTTPS công khai.');
+    final sentToken = accessToken;
+    final request = http.Request(method, Uri.parse('$endpoint$path'));
     request.headers.addAll({
       'Content-Type': 'application/json',
-      if (accessToken != null) 'Authorization': 'Bearer $accessToken',
+      if (sentToken != null && !path.startsWith('/auth/'))
+        'Authorization': 'Bearer $sentToken',
     });
     if (body != null) request.body = jsonEncode(body);
     http.Response response;
     try {
-      response = await http.Response.fromStream(
-        await request.send().timeout(connectionTimeout),
-      ).timeout(const Duration(seconds: 20));
+      response = await client
+          .send(request)
+          .then(http.Response.fromStream)
+          .timeout(timeout);
     } catch (_) {
       throw ApiException(
-        'Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.',
+        'Mất kết nối hoặc máy chủ đang khởi động. Tải lại dữ liệu trước khi gửi lại thao tác.',
       );
     }
     if (response.statusCode == 401 &&
         retry &&
         refreshToken != null &&
         !path.startsWith('/auth/')) {
-      _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
-      await _refreshing;
+      // Concurrent 401s share one rotation; a late 401 must not consume another token.
+      if (sentToken == accessToken) {
+        _refreshing ??= _refresh().whenComplete(() => _refreshing = null);
+        await _refreshing;
+      }
       return this.request(method, path, body, false);
     }
-    dynamic data;
+    dynamic envelope;
     try {
-      data = jsonDecode(utf8.decode(response.bodyBytes));
+      envelope = jsonDecode(utf8.decode(response.bodyBytes));
     } catch (_) {
-      data = null;
+      /* Handled below. */
     }
     if (response.statusCode >= 400) {
-      final detail = data is Map ? data['detail'] : null;
+      if (response.statusCode == 401 && !path.startsWith('/auth/')) {
+        await expire();
+      }
+      final error = envelope is Map ? envelope['error'] : null;
       throw ApiException(
-        detail is String
-            ? detail
-            : detail is List
-            ? 'Dữ liệu chưa hợp lệ. Kiểm tra các trường nhập.'
+        error is Map && error['message'] is String
+            ? error['message']
             : 'Máy chủ trả lỗi ${response.statusCode}',
         response.statusCode,
+        error is Map ? error['code']?.toString() : null,
       );
     }
-    return data;
+    if (envelope is! Map || !envelope.containsKey('data')) {
+      throw ApiException('Phản hồi máy chủ không đúng hợp đồng API.');
+    }
+    return envelope['data'];
   }
 
   Future<void> _refresh() async {
-    final result = await request('POST', '/auth/refresh', {
-      'refresh_token': refreshToken,
-    }, false);
-    acceptTokens(result);
-    await onTokenRotation?.call();
+    try {
+      final result = await request('POST', '/auth/refresh', {
+        'refreshToken': refreshToken,
+      }, false);
+      acceptTokens(Json.from(result));
+      await onTokenRotation?.call();
+    } catch (_) {
+      // Rotation may have succeeded before a timeout: never replay the old refresh token.
+      await expire();
+      rethrow;
+    }
+  }
+
+  Future<void> expire() async {
+    accessToken = null;
+    refreshToken = null;
+    await onSessionExpired?.call();
   }
 
   void acceptTokens(Json result) {
-    accessToken = result['access_token'];
-    refreshToken = result['refresh_token'];
+    accessToken = result[demo ? 'access_token' : 'accessToken'];
+    refreshToken = result[demo ? 'refresh_token' : 'refreshToken'];
   }
 
   Future<String> exportCsv() async {
     if (demo) {
       return 'Name,Date,Check in,Check out\nNguyen Hoang Vu,2026-10-29,08:25,17:30\n';
     }
-    final response = await http
-        .get(
-          Uri.parse('$baseUrl/attendance/export'),
-          headers: {'Authorization': 'Bearer $accessToken'},
-        )
-        .timeout(connectionTimeout);
-    if (response.statusCode != 200) {
-      throw ApiException('Không xuất được báo cáo. Vui lòng đăng nhập lại.');
-    }
-    return utf8.decode(response.bodyBytes);
+    throw ApiException('Dùng báo cáo tháng để xuất CSV trong ứng dụng.');
   }
 }

@@ -21,3 +21,8 @@ mobile/android/key.properties
 *.keystore
 *.dump
 dist/
+node_modules/
+backend_shared/src/face/models/
+*.log
+docs/github-login.png
+docs/render-login.png

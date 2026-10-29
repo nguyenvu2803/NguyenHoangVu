@@ -1,44 +1,42 @@
-# Free web service. Supply an external Neon Free PostgreSQL URL and Brevo Free API key.
+# Optional personal deployment. APK currently uses the shared API.
+# Creates a free web service; no database or paid resource is created.
 services:
   - type: web
     name: nguyenhoangvu-api
-    runtime: docker
+    runtime: node
     plan: free
-    rootDir: backend
-    dockerfilePath: ./Dockerfile
-    healthCheckPath: /health
+    rootDir: backend_shared
+    buildCommand: npm ci && npm run models:fetch
+    startCommand: npm start
+    healthCheckPath: /v1/health
     envVars:
-      - key: ENVIRONMENT
+      - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: 24.22.1
+      - key: ONNXRUNTIME_NODE_INSTALL
+        value: skip
+      - key: TRUST_PROXY
+        value: "true"
+      - key: APP_TIME_ZONE
+        value: Asia/Ho_Chi_Minh
       - key: DATABASE_URL
         sync: false
-      - key: SEED_DEMO
-        value: "false"
+      - key: DATABASE_SSL
+        value: "true"
       - key: JWT_SECRET
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: EMAIL_PROVIDER
+        value: apps_script
+      - key: OTP_RELAY_URL
         sync: false
-      - key: PUBLIC_URL
+      - key: OTP_RELAY_SECRET
         sync: false
-      - key: CORS_ORIGINS
-        sync: false
-      - key: MAIL_PROVIDER
-        value: brevo
-      - key: BREVO_API_KEY
-        sync: false
-      - key: EMAIL_FROM
-        sync: false
-      - key: EMAIL_SENDER_NAME
-        value: NguyenHoangVu
-      - key: GOOGLE_CLIENT_ID
-        sync: false
-      - key: GOOGLE_CLIENT_SECRET
-        sync: false
-      - key: MOBILE_CALLBACK
-        value: nguyenhoangvu://oauth
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
-      - key: TWILIO_FROM
+      - key: BOOTSTRAP_ADMIN_FULL_NAME
+        value: Nguyễn Hoàng Vũ
+      - key: BOOTSTRAP_ADMIN_USERNAME
         sync: false
       - key: BOOTSTRAP_ADMIN_EMAIL
         sync: false

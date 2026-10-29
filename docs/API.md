@@ -1,66 +1,28 @@
-# API và phân quyền
+# Hợp đồng API cho Flutter
 
-API thật dùng origin HTTPS sau deploy. Swagger tại `/docs` và schema OpenAPI tại `/openapi.json` được FastAPI sinh trực tiếp từ source; đây là tài liệu schema chính xác nhất.
+Base URL: `https://nguyen-hoai-nam-2380601398-api.onrender.com/v1`.
 
-Header với request đã đăng nhập: `Authorization: Bearer <access_token>`.
+JSON thành công: `{"data": ...}`. JSON lỗi: `{"error":{"code":"...","message":"..."}}`. UUID dạng chuỗi; thuộc tính camelCase; thời gian ISO 8601 có timezone. Token Bearer cho endpoint bảo vệ.
 
-| Endpoint | Quyền / chức năng |
+| Nhóm | Endpoint / dữ liệu |
 |---|---|
-| `GET /health` | Công khai, kiểm tra API và DB |
-| `POST /auth/register` | Công khai; `name`, `email`, `password`, `phone` tùy chọn; gửi OTP, không cấp token ngay |
-| `POST /auth/login` | Công khai; `email`, `password`, `channel=email\|sms`; gửi OTP |
-| `POST /auth/verify` | Công khai; `challenge_id`, `code`; xác minh OTP, trả token và user |
-| `POST /auth/refresh` | `refresh_token`; xoay token một lần |
-| `POST /auth/logout` | `refresh_token`; thu hồi phiên thiết bị |
-| `GET /auth/google/start?app_challenge=...` | Redirect tới Google; hash SHA-256 hex của verifier ứng dụng |
-| `GET /auth/google/callback` | Callback server do Google gọi; kiểm tra state và email đã xác minh |
-| `POST /auth/google/exchange` | `code`, `verifier`; đổi mã callback một lần lấy token |
-| `GET /me` | Mọi tài khoản đã xác minh |
-| `GET, POST /employees` | Admin; danh sách và tạo nhân viên |
-| `PUT, DELETE /employees/{id}` | Admin; cập nhật hoặc khóa, không cho tự khóa/hạ quyền |
-| `GET /branches` | Admin/employee |
-| `POST /branches`, `PUT, DELETE /branches/{id}` | Admin CRUD chi nhánh |
-| `GET /shifts` | Admin/employee |
-| `POST /shifts`, `PUT, DELETE /shifts/{id}` | Admin CRUD ca |
-| `GET /assignments` | Admin xem toàn bộ; employee chỉ xem của mình |
-| `POST /assignments`, `PUT, DELETE /assignments/{id}` | Admin phân ca, sửa/xóa khi chưa chấm công |
-| `GET /qr/{branch_id}` | Admin; token QR hiệu lực 45 giây |
-| `POST /attendance/check-in` | Admin/employee; QR + tọa độ + độ chính xác |
-| `POST /attendance/check-out` | Admin/employee; QR + tọa độ + độ chính xác |
-| `GET /attendance` | Admin toàn bộ; employee của mình; tối đa 500 bản ghi gần nhất |
-| `GET /attendance/export` | Admin; toàn bộ bảng công CSV UTF-8 BOM |
-| `GET /leaves` | Admin toàn bộ; employee của mình |
-| `POST /leaves` | Tạo đơn của chính mình |
-| `PUT, DELETE /leaves/{id}` | Chủ đơn, trạng thái pending |
-| `POST /leaves/{id}/decision` | Admin; `status=approved\|rejected`, không tự duyệt |
-| `POST /locations/share` | Admin/employee; chủ động chia sẻ trong 1 giờ |
-| `DELETE /locations/share` | Dừng chia sẻ vị trí của chính mình |
-| `GET /locations` | Admin; chỉ vị trí còn hạn |
-| `GET /insights` | Admin/employee; số liệu nhịp làm việc cá nhân |
-| `GET /audit` | Admin; 200 thao tác gần nhất |
+| Đăng ký | POST `/auth/register`: fullName, username, email, password |
+| Đăng nhập | POST `/auth/login`: username, password; trả challenge, chưa có token |
+| OTP | POST `/auth/verify-otp`: challengeId, code; trả accessToken, refreshToken, user |
+| Gửi lại | POST `/auth/resend-otp`: challengeId; cooldown 60s |
+| Phiên | POST `/auth/refresh`, `/auth/logout`: refreshToken; GET `/me` |
+| Dashboard | GET `/dashboard` |
+| Nhân viên / chi nhánh / ca | GET/POST `/employees`, `/branches`, `/shifts`; GET/PATCH/DELETE `/:id` theo quyền |
+| Công | GET `/attendance`; POST `/attendance/check-in`, `/attendance/check-out`: shiftId, latitude, longitude, accuracyMeters |
+| Điều chỉnh | GET/POST `/corrections`; PATCH/DELETE `/:id`; status và resolutionNote khi duyệt |
+| Mặt | GET `/face/status`; POST `/face/enroll`: imageBase64; DELETE `/face/enroll`; POST `/auth/face-login`: username, imageBase64 |
+| Vị trí | GET/POST `/location-shares`: latitude, longitude, accuracyMeters, ttlMinutes; DELETE `/:id` chỉ chủ sở hữu |
+| Báo cáo | GET `/reports/monthly?month=YYYY-MM` |
 
-## Dữ liệu chấm công
+Quyền: admin toàn hệ thống, manager trong chi nhánh, employee dữ liệu cá nhân. Pending chỉ đọc `/me`; không mở dashboard. Server luôn kiểm tra quyền, không dựa vào menu frontend.
 
-```json
-{
-  "latitude": 10.7769,
-  "longitude": 106.7009,
-  "accuracy": 10,
-  "qr_token": "TOKEN_KY_SO_DO_ADMIN_CAP"
-}
-```
+Mật khẩu 10–128 ký tự; OTP 6 số, hạn 10 phút, tối đa 5 lần sai; refresh xoay một lần. Không phát lại request ghi khi timeout mạng vì máy chủ có thể đã ghi thành công.
 
-Giá trị vị trí ở ví dụ chỉ minh họa. Trong app thật, Flutter lấy GPS mới; API kiểm tra với tọa độ chi nhánh do admin cấu hình.
+QR chỉ chọn ca của người quét, không gọi endpoint `/qr` cũ và không gửi `qr_token`. GPS yêu cầu sai số <=100m và khoảng cách + sai số nằm trong bán kính; giờ server quyết định cửa sổ chấm công.
 
-## Mã lỗi
-
-- `400`: OTP sai/hết hạn, quy tắc ngày hoặc ca không phù hợp, GPS ngoài phạm vi, QR hết hạn/không hợp lệ.
-- `401`: thiếu/hết hạn access token, refresh token đã dùng hoặc không hợp lệ.
-- `403`: sai vai trò, cố sửa đơn người khác hoặc tự duyệt đơn.
-- `404`: bản ghi không tồn tại.
-- `409`: dữ liệu trùng, còn tham chiếu, chấm công hai lần hoặc đơn đã xử lý.
-- `422`: trường nhập sai định dạng hoặc giới hạn.
-- `429`: quá nhiều request xác thực.
-- `503`: nhà cung cấp OTP/Google chưa cấu hình hoặc đang lỗi.
-
-OTP không xuất hiện trong response. Không đưa refresh token hoặc password hash vào dữ liệu `/me`, `/employees`, bảng công hay CSV.
+Source định nghĩa schema chi tiết: `backend_shared/src/resources.js`, `auth.js`, `validation.js`. Module Node.js mới là backend dùng cho bản này; OpenAPI FastAPI cũ ở `docs/legacy/` không áp dụng.

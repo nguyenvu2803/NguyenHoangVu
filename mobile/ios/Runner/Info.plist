@@ -25,7 +25,7 @@
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>NSCameraUsageDescription</key>
-    <string>Quét mã QR tại văn phòng để xác nhận chấm công.</string>
+    <string>Chụp khuôn mặt để đăng ký, đăng nhập và quét QR chọn ca chấm công.</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Xác nhận vị trí khi chấm công hoặc khi bạn chọn chia sẻ vị trí.</string>
     <key>NSFaceIDUsageDescription</key>

@@ -1,0 +1,35 @@
+# Backend-only repository root. Manual Web Service setup is preferred for the
+# existing database nguyen-hoai-nam-2380601398-db; this file creates no second DB.
+services:
+  - type: web
+    name: nguyen-hoai-nam-2380601398-api
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run models:fetch
+    startCommand: npm start
+    healthCheckPath: /v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.14.0
+      - key: ONNXRUNTIME_NODE_INSTALL
+        value: skip
+      - key: TRUST_PROXY
+        value: "true"
+      - key: APP_TIME_ZONE
+        value: Asia/Bangkok
+      - key: DATABASE_SSL
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: OTP_SECRET
+        generateValue: true
+      - key: EMAIL_PROVIDER
+        value: apps_script
+      - key: OTP_RELAY_URL
+        sync: false
+      - key: OTP_RELAY_SECRET
+        sync: false

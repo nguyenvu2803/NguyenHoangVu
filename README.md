@@ -1,144 +1,91 @@
-# NguyenHoangVu · Workroom
+# NguyenHoangVu · Chấm công nhân viên
 
-Ứng dụng **chấm công nhân viên viết bằng Flutter**, giao diện tiếng Việt cho Android/iOS. Backend FastAPI và PostgreSQL, dùng API HTTPS để truy cập từ điện thoại thật. Có cấu hình miễn phí cho đồ án cá nhân.
+**Nguyễn Hoàng Vũ — MSSV 2380602586**. Ứng dụng di động Flutter, giao diện tiếng Việt xanh ngọc/kem, font Manrope và Lora đóng gói sẵn. Bản Android kết nối trực tiếp API HTTPS public, không dùng localhost hoặc dữ liệu demo khi nộp.
 
-![Dashboard](docs/dashboard-desktop.png)
+## Link nộp bài
 
-## Deploy miễn phí cho bài cá nhân
+| Thành phần | Địa chỉ |
+|---|---|
+| Frontend Flutter | https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/mobile |
+| Backend tích hợp | https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/backend_shared |
+| API public | https://nguyen-hoai-nam-2380601398-api.onrender.com/v1 |
+| Health public | https://nguyen-hoai-nam-2380601398-api.onrender.com/v1/health |
+| Video YouTube | Chưa có; chủ bài sẽ quay và tải lên theo `docs/KICH_BAN_VIDEO.md` |
 
-Dùng **Render Free + Neon Free + Brevo Free**. Không cần thuê VPS hoặc mua domain cho API. Source đã hỗ trợ OTP email qua HTTPS để tránh cổng SMTP bị Render Free chặn; `render.yaml` không còn tạo DB trả phí.
+Trạng thái kiểm tra thực tế nằm trong [VERIFICATION.md](docs/VERIFICATION.md). Link source chỉ coi là bàn giao sau khi GitHub có commit; video chỉ bổ sung sau khi tải lên và kiểm tra quyền xem.
 
-Làm theo từng bước tại **[DEPLOY_FREE.md](docs/DEPLOY_FREE.md)**. Các dịch vụ có hạn mức/duyệt tài khoản riêng; SMS thật không được bảo đảm miễn phí. Chưa có tài khoản/URL của bạn nên chưa deploy thật.
+## Chức năng bản tích hợp
 
-## Mở và chạy ngay
+- Đăng ký email, xác minh OTP; đăng nhập tên đăng nhập + mật khẩu + OTP email. OTP 6 số, hết hạn 10 phút, cooldown gửi lại và giới hạn thử sai tại backend.
+- Phân quyền **admin / manager / employee**. Admin quản trị toàn bộ; manager quản lý chi nhánh; employee xem dữ liệu cá nhân. Tài khoản pending/suspended có màn hình riêng, không tự nâng quyền.
+- CRUD nhân viên, chi nhánh và ca làm theo quyền. Đơn điều chỉnh công có tạo/sửa/xóa khi pending và duyệt/từ chối bởi người có quyền; giữ lịch sử công gốc.
+- Chấm vào/ra ca bằng GPS mới, kiểm tra bán kính chi nhánh, sai số tối đa 100m, ca được phân và cửa sổ giờ. Máy chủ ghi thời điểm chấm công.
+- **Đăng nhập khuôn mặt qua camera**: đăng ký/xóa mẫu; backend YuNet/SFace đối chiếu ảnh; khớp mặt vẫn yêu cầu OTP email. Đây là nhận diện 2D, chưa có chứng nhận liveness.
+- **Chia sẻ vị trí**: lấy một vị trí hiện tại, chọn hạn 15/30/60/120 phút, dừng sớm; admin/manager đọc theo quyền; mở bản đồ khi người dùng chọn. Không theo dõi nền.
+- **QR**: tạo/hiển thị QR ca và quét bằng camera để chọn ca được phân. QR là mã chọn ca, không phải bằng chứng hiện diện hay chữ ký chống sao chép; GPS và phân quyền backend xác thực việc chấm công.
+- Báo cáo tháng và xuất CSV; hiển thị thời gian hiệu lực sau điều chỉnh và thời gian thiết bị gốc.
+- Đề xuất **Nhịp cân bằng**: cảnh báo khoảng nghỉ giữa ca dưới 11 giờ, ca dài hơn 10 giờ và thiếu giờ vào/ra. Chưa nghiên cứu toàn bộ thị trường để tuyên bố tính năng chưa tồn tại ở app khác.
 
-```bash
+Đề cho phép đăng ký email **hoặc** OAuth và OTP email **hoặc** SMS; bản đang kết nối dùng email + OTP email. Không ghi nhận Google OAuth/SMS là tính năng đã nghiệm thu của bản này.
+
+## Cài APK và chạy lại
+
+APK production: `dist/NguyenHoangVu.apk` nếu nhận gói bàn giao hoặc tự build theo lệnh dưới. APK ký debug key để cài/nộp đồ án, chưa phải chữ ký phát hành Play Store. Yêu cầu Android API 24 trở lên.
+
+```sh
 cd mobile
 flutter pub get
-flutter run --dart-define=DEMO_MODE=true
-```
-
-Chọn **Khám phá bản demo**. Trong **Hồ sơ → Không gian demo**, đổi giữa nhân viên, quản trị viên và khách hàng. Dữ liệu mẫu chỉnh sửa được trong phiên chạy; khởi động lại sẽ khôi phục. Không cần tài khoản dịch vụ để xem giao diện.
-
-Nếu đã nhận thư mục `dist`, cài `dist/NguyenHoangVu-demo.apk` lên Android 7.0+; ứng dụng không yêu cầu tài khoản máy chủ để khám phá demo. APK demo không phải bản nộp kết nối API thật.
-
-**Chạy với máy chủ thật:** làm theo [DEPLOY.md](docs/DEPLOY.md), điền `mobile/config/production.json`, sau đó:
-
-```bash
-cd mobile
+cp config/production.example.json config/production.json
 flutter run --dart-define-from-file=config/production.json
 ```
 
-## Đối chiếu yêu cầu đề bài
+Mẫu đã điền đúng API chung, giữ `DEMO_MODE=false`, `SHOW_DEMO=false`, `ALLOW_INSECURE_DEV=false`. Không ghép thêm `/v1` vào endpoint. Flutter được kiểm tra với phiên bản 3.47.4.
 
-| Yêu cầu | Phần đã xây dựng |
-|---|---|
-| Tên project cá nhân | Thư mục `NguyenHoangVu`; tên hiển thị Android/iOS `NguyenHoangVu`; package Dart `nguyen_hoang_vu` theo quy tắc Dart |
-| Mobile bắt buộc Flutter | Toàn bộ màn hình mobile dùng Flutter; có project Android/iOS, thêm Flutter Web để xem trước |
-| Đăng ký email | Đăng ký → OTP email → xác minh; mật khẩu băm Argon2 |
-| Đăng ký/đăng nhập bên thứ ba | Google OAuth 2.0 Authorization Code qua backend; state, mã trao đổi một lần và ràng buộc verifier ứng dụng |
-| Đăng nhập + mật khẩu + OTP | Email làm tên đăng nhập; OTP email hoặc SMS Twilio; mã 6 số, 5 phút, tối đa 5 lần sai |
-| Phân quyền | Admin, nhân viên, khách hàng; chuyển giao diện tương ứng và kiểm tra quyền tại API |
-| CRUD | Nhân viên, chi nhánh, ca làm, phân ca, đơn nghỉ; khóa nhân viên để giữ lịch sử bảng công |
-| Chấm công | Vào/ra ca theo lịch, GPS trong bán kính chi nhánh và QR ký số hết hạn sau 45 giây |
-| Đăng nhập bằng khuôn mặt | Face ID do hệ điều hành xác thực trên thiết bị hỗ trợ; có vân tay trên thiết bị hỗ trợ |
-| Chia sẻ vị trí | Chia sẻ một lần cho admin trong 1 giờ, dừng chủ động; chia sẻ link bản đồ bằng bảng chia sẻ hệ thống |
-| QR | Admin mở QR văn phòng tự đổi; nhân viên quét bằng camera; backend xác minh chữ ký, hạn và chi nhánh |
-| Tính năng đề xuất | **Nhịp cân bằng**: giờ làm tuần, giờ vượt chuẩn, tải giờ công và gợi ý nghỉ có điều kiện |
-| Giao diện và cả nhóm chạy được | Thiết kế xanh ngọc/kem, font Manrope + Lora đóng gói sẵn, bố cục điện thoại/tablet/desktop, lockfile và cấu hình chung |
-| API không dùng localhost khi nộp | Cấu hình API HTTPS bằng `--dart-define`; Render blueprint hoặc VPS Docker + Caddy + PostgreSQL |
+Build từ thư mục project:
 
-**Ba mục thuyết trình:** (a) Face ID, (b) chia sẻ vị trí, (e) QR. Vân tay là lựa chọn bổ sung của cùng cơ chế sinh trắc học. Face ID không phải mô hình nhận diện ảnh selfie tự huấn luyện. Nếu giảng viên bắt buộc so khớp khuôn mặt qua camera thay vì Face ID của hệ điều hành, cần thống nhất lại tiêu chí này trước nghiệm thu.
-
-## Trạng thái thực tế
-
-- Source Flutter và backend đã có; demo và API thật là hai chế độ riêng, không tự giả lập OTP hoặc GPS trong chế độ API thật.
-- Chưa có tài khoản Render/Neon/Brevo/Google OAuth của bạn. Project kèm cấu hình và hướng dẫn deploy miễn phí; **chưa có URL production đang hoạt động**.
-- Kiểm thử tự động và bản build được ghi tại [VERIFICATION.md](docs/VERIFICATION.md).
-- Cần nghiệm thu Face ID/vân tay, camera, GPS trên điện thoại thật và dịch vụ OTP/OAuth sau khi cấu hình.
-
-## Cấu trúc
-
-```text
-NguyenHoangVu/
-├── mobile/                 Flutter Android, iOS, web
-│   ├── lib/core/           API, phiên đăng nhập, dữ liệu, theme, demo
-│   ├── lib/screens/        Đăng nhập, dashboard, chấm công, CRUD, hồ sơ
-│   ├── lib/widgets/        Thành phần giao diện và form
-│   ├── assets/fonts/      Font + giấy phép, không tải font lúc chạy
-│   └── config/            Mẫu API HTTPS dùng chung cho nhóm
-├── backend/
-│   ├── app/               FastAPI, model, xác thực, OTP, quản trị
-│   └── tests/             Kiểm thử nghiệp vụ và phân quyền
-├── docs/                  Deploy, kiến trúc, nghiệm thu, thuyết trình
-├── deploy/Caddyfile        Reverse proxy và HTTPS cho VPS
-├── compose.yaml            PostgreSQL + API + Caddy
-├── render.yaml             Render blueprint
-├── scripts/                Build APK, kiểm tra deploy, đóng gói source
-└── .github/workflows/      CI backend + Flutter
-```
-
-## Công cụ cần có
-
-- Flutter **3.47.4**, Dart đi kèm; Android SDK, Android Studio hoặc VS Code. Android tối thiểu API 24 theo Flutter hiện tại.
-- Build iOS cần macOS + Xcode đầy đủ và cấu hình signing của Apple. Face ID cần iPhone hỗ trợ và đã đăng ký khuôn mặt.
-- Backend: Python 3.11 hoặc Docker. Server thật dùng PostgreSQL; SQLite chỉ phục vụ phát triển/kiểm thử.
-- Không chia sẻ `.env.production`, mật khẩu, `key.properties` hoặc file keystore qua Git. `API_BASE_URL` là cấu hình công khai, có thể chia sẻ cho cả nhóm.
-
-## Chạy backend để phát triển
-
-Các lệnh dưới đây chỉ kiểm thử nội bộ trên máy lập trình. Bản nộp và ứng dụng của cả nhóm phải dùng API HTTPS đã deploy.
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-uvicorn app.main:app --host 127.0.0.1 --port 8000
-```
-
-Windows PowerShell: tạo môi trường bằng `py -3.11 -m venv .venv`, kích hoạt bằng `.venv\Scripts\Activate.ps1`, sao chép bằng `Copy-Item .env.example .env`.
-
-Khi `SEED_DEMO=true`, server phát triển tạo:
-
-| Vai trò | Email | Mật khẩu phát triển |
-|---|---|---|
-| Nhân viên | `vu@demo.vn` | `Vu@2026Demo!` |
-| Admin | `admin@demo.vn` | `Vu@2026Demo!` |
-| Khách hàng | `khach@demo.vn` | `Vu@2026Demo!` |
-
-Nếu chưa cấu hình dịch vụ email trong môi trường development, mã OTP được in ở log server, **không trả trong response**. Production bắt buộc dịch vụ email thật (Brevo HTTPS hoặc SMTP) và cấm seed demo. Dữ liệu server phát triển khác dữ liệu giao diện demo.
-
-Swagger/OpenAPI ở đường dẫn `/docs` và `/openapi.json` của API. [API.md](docs/API.md) tóm tắt endpoint và quyền.
-
-## Build APK kết nối API đã deploy
-
-```bash
-cp mobile/config/production.example.json mobile/config/production.json
-# Sửa API_BASE_URL thành URL HTTPS thật; giữ DEMO_MODE=false.
+```sh
 bash scripts/build_android.sh
 ```
 
-Windows:
+Windows: `powershell -ExecutionPolicy Bypass -File scripts/build_android.ps1`. Script kiểm tra HTTPS/health và auth trước khi build. Bản demo cũ `dist/NguyenHoangVu-demo.apk` không phải bản nộp.
 
-```powershell
-Copy-Item mobile/config/production.example.json mobile/config/production.json
-# Sửa API_BASE_URL trước khi build.
-powershell -ExecutionPolicy Bypass -File scripts/build_android.ps1
-```
+## Đăng ký trên API chung
 
-Script kiểm tra API public, môi trường production và endpoint được bảo vệ trước khi build. Kết quả `dist/NguyenHoangVu.apk`. Mặc định ký bằng debug key để cài thử/nộp bài. Muốn phát hành Play Store, dùng keystore riêng theo [hướng dẫn signing](https://docs.flutter.dev/deployment/android#sign-the-app), không dùng debug key.
+1. Nhập họ tên, tên đăng nhập 3–32 ký tự thường/số/`_`/`.`, email thật và mật khẩu 10–128 ký tự.
+2. Nhập OTP nhận qua email; xác thực xong tài khoản có trạng thái pending.
+3. Chủ quản trị API chung duyệt active và gán chi nhánh. Quản trị viên cần quyền hợp lệ để tạo hoặc phân ca.
+4. Đăng nhập lại bằng mật khẩu + OTP. Không có tài khoản admin hoặc OTP mặc định trong source.
 
-## Kiểm tra source
+Mật khẩu/OTP do chủ tài khoản tự nhập, không gửi qua Git/chat. Thiếu tài khoản active thì chưa nghiệm thu được CRUD/chấm công trên API chung.
 
-```bash
-cd backend
-.venv/bin/python -m pytest -q
+## Source backend và deploy
+
+`backend_shared/` là **Node.js/Express + PostgreSQL** đã lấy từ backend nhóm 8. Ghi nguồn/commit và thay đổi tại [INTEGRATION_NGUYENHOANGVU.md](backend_shared/INTEGRATION_NGUYENHOANGVU.md). Backend dùng chung được phép theo đề; không nhận source của người khác là tự viết toàn bộ.
+
+API public hiện do chủ backend chung vận hành; các sửa cục bộ chưa được deploy lên dịch vụ đó. Có thể deploy bản riêng miễn phí bằng root `render.yaml`, Neon PostgreSQL Free và email relay HTTPS; xem [DEPLOY_FREE.md](docs/DEPLOY_FREE.md). Không cần VPS/domain trả phí. Không tự chọn gói trả phí.
+
+Thư mục `backend/`, `compose.yaml`, `.env.production.example`, `deploy/` và tài liệu `docs/legacy/` thuộc bản FastAPI ban đầu, được giữ để tham khảo; **không dùng cho APK production hiện tại**. Không dùng test hoặc screenshot demo cũ làm bằng chứng kiểm thử API chung.
+
+## Kiểm tra và bàn giao
+
+```sh
+python3 scripts/check_deployment.py
+cd backend_shared
+npm ci
+npm run models:fetch
+npm test
 cd ../mobile
-flutter analyze
-flutter test
-flutter build web --release --dart-define=DEMO_MODE=true --no-wasm-dry-run
+flutter analyze --no-pub
+flutter test --no-pub
 ```
 
-Tài liệu tiếp theo: [Deploy](docs/DEPLOY.md) · [Kiến trúc](docs/ARCHITECTURE.md) · [API](docs/API.md) · [Nghiệm thu và thuyết trình](docs/DEMO.md).
+Từ root, `python3 scripts/test_backend_integration.py` chạy Dart API client gọi Express thật với pg-mem/mailbox tách biệt, bao gồm OTP, phân quyền, CRUD, GPS payload, mặt, báo cáo và đăng xuất. Test chờ cooldown OTP 61 giây; đây không phải phép thử OTP email hay GPS phần cứng production. Cần Node.js >=22 trên PATH và model đã tải.
+
+Backend cần Node.js >=22. Khi cài có thể đặt `ONNXRUNTIME_NODE_INSTALL=skip` để dùng CPU, không tải CUDA. Test backend dùng pg-mem/mailbox riêng và model mặt thật; không gửi OTP thật, không thay thế kiểm tra PostgreSQL/thiết bị production.
+
+- [Hồ sơ cá nhân và điểm dự kiến](hovaten.txt)
+- [Kịch bản quay video](docs/KICH_BAN_VIDEO.md)
+- [Danh sách nộp bài](docs/NOP_BAI.md)
+- [Bảng kiểm thử](docs/QA_INVENTORY.md)
+
+Không đóng gói `.env`, token, mật khẩu, keystore, account Postman riêng hoặc model tải về vào Git/source ZIP.

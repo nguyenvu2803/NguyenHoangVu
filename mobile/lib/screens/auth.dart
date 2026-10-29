@@ -1,13 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:math';
-import 'package:crypto/crypto.dart';
-import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../core/session.dart';
+import 'package:flutter/services.dart';
 import '../core/api.dart';
+import '../core/live.dart';
+import '../core/session.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 
@@ -20,62 +16,41 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final form = GlobalKey<FormState>();
-  final email = TextEditingController();
-  final password = TextEditingController();
-  final name = TextEditingController();
-  final phone = TextEditingController();
-  final code = TextEditingController();
+  final username = TextEditingController(), password = TextEditingController();
+  final email = TextEditingController(),
+      name = TextEditingController(),
+      code = TextEditingController();
   bool register = false, busy = false, obscure = true;
-  String channel = 'email';
   Json? challenge;
   String? error;
-  StreamSubscription<Uri>? links;
-  int seconds = 0;
+  DateTime? resendAt;
   Timer? timer;
+  int get seconds =>
+      (DateTime.tryParse(
+                challenge?['expiresAt'] ?? '',
+              )?.difference(DateTime.now()).inSeconds ??
+              0)
+          .clamp(0, 3600);
+  int get cooldown =>
+      (resendAt?.difference(DateTime.now()).inSeconds ?? 0).clamp(0, 3600);
   @override
   void initState() {
     super.initState();
-    if (!kIsWeb) {
-      final appLinks = AppLinks();
-      links = appLinks.uriLinkStream.listen(_oauth, onError: (_) {});
-      appLinks.getInitialLink().then((uri) {
-        if (uri != null) _oauth(uri);
-      });
-    } else if (Uri.base.queryParameters['code'] != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _oauth(Uri.base));
-    }
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted && challenge != null) setState(() {});
+    });
   }
 
   @override
   void dispose() {
-    for (final c in [email, password, name, phone, code]) {
+    timer?.cancel();
+    for (final c in [username, password, email, name, code]) {
       c.dispose();
     }
-    links?.cancel();
-    timer?.cancel();
     super.dispose();
   }
 
-  Future<void> _oauth(Uri uri) async {
-    final value = uri.queryParameters['code'];
-    if (value == null || (!kIsWeb && uri.scheme != 'nguyenhoangvu')) return;
-    await run(() async {
-      final verifier = await widget.session.storage.read(key: 'oauth_verifier');
-      if (verifier == null) {
-        throw ApiException('Phiên Google đã hết. Vui lòng đăng nhập lại.');
-      }
-      final result = await widget.session.api.request(
-        'POST',
-        '/auth/google/exchange',
-        {'code': value, 'verifier': verifier},
-      );
-      await widget.session.storage.delete(key: 'oauth_verifier');
-      await widget.session.accept(result);
-    });
-  }
-
   Future<void> run(Future<void> Function() action) async {
-    if (busy) return;
     setState(() {
       busy = true;
       error = null;
@@ -89,343 +64,263 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  Future<void> submit() async {
-    if (!form.currentState!.validate()) return;
-    await run(() async {
-      if (challenge != null) {
-        if (widget.session.api.demo && code.text != '123456') {
-          throw ApiException('Mã demo là 123456');
-        }
-        final result = await widget.session.api.request(
-          'POST',
-          '/auth/verify',
-          {'challenge_id': challenge!['challenge_id'], 'code': code.text},
-        );
-        await widget.session.accept(result);
-      } else {
-        final response = await widget.session.api
-            .request('POST', register ? '/auth/register' : '/auth/login', {
-              'email': email.text.trim(),
-              'password': password.text,
-              if (register) 'name': name.text.trim(),
-              if (register) 'phone': phone.text.trim(),
-              if (!register) 'channel': channel,
-            });
-        setState(() {
-          challenge = Map<String, dynamic>.from(response);
-          seconds = 300;
-        });
-        timer?.cancel();
-        timer = Timer.periodic(const Duration(seconds: 1), (t) {
-          if (!mounted || seconds <= 0) {
-            t.cancel();
-            return;
-          }
-          setState(() => seconds--);
-        });
-      }
+  void setChallenge(dynamic value) {
+    if (!mounted) return;
+    setState(() {
+      challenge = Json.from(value);
+      resendAt = DateTime.now().add(
+        Duration(
+          seconds: (challenge!['retryAfterSeconds'] as num?)?.toInt() ?? 60,
+        ),
+      );
+      code.clear();
     });
   }
 
+  Future<void> submit() async {
+    if (!form.currentState!.validate()) return;
+    await run(() async {
+      final api = widget.session.api;
+      if (challenge != null) {
+        final result = await api.request('POST', '/auth/verify-otp', {
+          'challengeId': challenge!['challengeId'],
+          'code': code.text.trim(),
+        });
+        await widget.session.accept(Json.from(result));
+        return;
+      }
+      setChallenge(
+        await api.request('POST', register ? '/auth/register' : '/auth/login', {
+          'username': username.text.trim().toLowerCase(),
+          'password': password.text,
+          if (register) 'fullName': name.text.trim(),
+          if (register) 'email': email.text.trim().toLowerCase(),
+        }),
+      );
+    });
+  }
+
+  Future<void> faceLogin() async {
+    if (!RegExp(
+      r'^[a-z0-9][a-z0-9_.]{2,31}$',
+    ).hasMatch(username.text.trim().toLowerCase())) {
+      setState(() => error = 'Nhập tên đăng nhập trước khi chụp khuôn mặt.');
+      return;
+    }
+    if (!await confirm(
+      context,
+      'Đăng nhập bằng khuôn mặt',
+      'Ảnh chụp sẽ gửi qua HTTPS tới máy chủ để đối chiếu khuôn mặt đã đăng ký. Sau đó vẫn cần OTP email.',
+    )) {
+      return;
+    }
+    await run(() async {
+      final image = await captureFace();
+      if (image == null) return;
+      setChallenge(
+        await widget.session.api.request('POST', '/auth/face-login', {
+          'username': username.text.trim().toLowerCase(),
+          'imageBase64': image,
+        }),
+      );
+    });
+  }
+
+  Widget field(
+    TextEditingController c,
+    String label, {
+    bool secret = false,
+    bool mail = false,
+  }) => Padding(
+    padding: const EdgeInsets.only(bottom: 15),
+    child: TextFormField(
+      controller: c,
+      enabled: !busy,
+      obscureText: secret && obscure,
+      autocorrect: false,
+      keyboardType: mail ? TextInputType.emailAddress : TextInputType.text,
+      autofillHints: c == username
+          ? const [AutofillHints.username]
+          : secret
+          ? const [AutofillHints.password]
+          : null,
+      maxLength: c == name
+          ? 100
+          : mail
+          ? 254
+          : secret
+          ? 128
+          : 32,
+      decoration: InputDecoration(
+        labelText: label,
+        counterText: '',
+        suffixIcon: secret
+            ? IconButton(
+                onPressed: () => setState(() => obscure = !obscure),
+                icon: Icon(
+                  obscure
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                ),
+              )
+            : null,
+      ),
+      validator: (value) {
+        final text = (value ?? '').trim();
+        if (text.isEmpty) return 'Nhập ${label.toLowerCase()}';
+        if (c == username &&
+            !RegExp(
+              r'^[a-z0-9][a-z0-9_.]{2,31}$',
+            ).hasMatch(text.toLowerCase())) {
+          return '3–32 ký tự: a-z, 0-9, dấu _ hoặc .';
+        }
+        if (c == name && text.length < 2) return 'Họ tên tối thiểu 2 ký tự';
+        if (secret && register && (value?.length ?? 0) < 10) {
+          return 'Mật khẩu tối thiểu 10 ký tự';
+        }
+        if (mail && !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(text)) {
+          return 'Email chưa hợp lệ';
+        }
+        return null;
+      },
+    ),
+  );
   @override
   Widget build(BuildContext context) {
-    final wide = MediaQuery.sizeOf(context).width > 900;
-    final content = SingleChildScrollView(
-      padding: EdgeInsets.all(wide ? 56 : 26),
-      child: Center(
+    final wide = MediaQuery.sizeOf(context).width >= 950;
+    final content = Center(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.all(wide ? 40 : 24),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 400),
+          constraints: const BoxConstraints(maxWidth: 440),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
+              const Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: forest,
-                      borderRadius: BorderRadius.circular(13),
-                    ),
-                    child: const Icon(
-                      Icons.blur_on_rounded,
-                      color: Colors.white,
-                      size: 27,
-                    ),
+                  CircleAvatar(
+                    backgroundColor: forest,
+                    child: Icon(Icons.spa_outlined, color: Colors.white),
                   ),
-                  const SizedBox(width: 12),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'workroom',
-                        style: TextStyle(
-                          fontSize: 23,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -1,
-                        ),
-                      ),
-                      Text(
-                        'NGUYENHOANGVU',
-                        style: TextStyle(
-                          fontSize: 8,
-                          letterSpacing: 2.1,
-                          color: muted,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
+                  SizedBox(width: 12),
+                  Text(
+                    'NguyenHoangVu',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 36),
+              const Tag('CHẤM CÔNG · KẾT NỐI ĐỘI NGŨ'),
+              const SizedBox(height: 16),
               Text(
                 challenge != null
-                    ? 'Một bước nữa thôi.'
+                    ? 'Kiểm tra email.'
                     : register
-                    ? 'Bắt đầu kết nối.'
+                    ? 'Bắt đầu cùng nhau.'
                     : 'Chào ngày mới.',
                 style: Theme.of(context).textTheme.headlineLarge,
               ),
               const SizedBox(height: 10),
               Text(
                 challenge != null
-                    ? 'Nhập 6 số đã gửi đến ${challenge!['destination']}.'
+                    ? 'Mã 6 số đã gửi đến ${challenge!['maskedEmail']}. Còn ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}.'
                     : register
-                    ? 'Tạo tài khoản để cùng làm việc tốt hơn.'
-                    : 'Một nơi cho giờ làm, lịch nghỉ và những ngày cân bằng.',
-                style: const TextStyle(color: muted, height: 1.8),
+                    ? 'Đăng ký email, xác thực OTP và chờ quản trị viên duyệt.'
+                    : 'Tên đăng nhập, mật khẩu và OTP email để vào ca.',
+                style: const TextStyle(color: muted),
               ),
-              const SizedBox(height: 30),
-              if (widget.session.api.demo)
-                const Padding(
-                  padding: EdgeInsets.only(bottom: 16),
-                  child: Tag(
-                    'CHẾ ĐỘ DEMO · OTP: 123456',
-                    color: Color(0xFF996133),
-                    icon: Icons.science_outlined,
-                  ),
-                ),
+              const SizedBox(height: 28),
               Form(
                 key: form,
                 child: Column(
                   children: [
-                    if (challenge != null) ...[
+                    if (challenge == null) ...[
+                      if (register) field(name, 'Họ và tên'),
+                      field(username, 'Tên đăng nhập'),
+                      if (register) field(email, 'Email', mail: true),
+                      field(password, 'Mật khẩu', secret: true),
+                    ] else
                       TextFormField(
                         controller: code,
-                        autofocus: true,
+                        enabled: !busy,
                         keyboardType: TextInputType.number,
-                        maxLength: 6,
+                        autofillHints: const [AutofillHints.oneTimeCode],
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(6),
+                        ],
                         decoration: const InputDecoration(
-                          labelText: 'Mã xác thực',
-                          prefixIcon: Icon(Icons.password_rounded),
+                          labelText: 'OTP email',
+                          prefixIcon: Icon(Icons.mark_email_read_outlined),
                         ),
-                        validator: (v) => RegExp(r'^\d{6}$').hasMatch(v ?? '')
+                        validator: (v) => seconds == 0
+                            ? 'Mã hết hạn. Gửi lại OTP.'
+                            : RegExp(r'^\d{6}$').hasMatch(v ?? '')
                             ? null
                             : 'Nhập đủ 6 chữ số',
                       ),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Hiệu lực còn ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}',
-                          style: const TextStyle(color: muted, fontSize: 12),
-                        ),
-                      ),
-                    ] else ...[
-                      if (register) ...[
-                        TextFormField(
-                          controller: name,
-                          decoration: const InputDecoration(
-                            labelText: 'Họ và tên',
-                            prefixIcon: Icon(Icons.person_outline),
-                          ),
-                          validator: (v) => (v?.trim().length ?? 0) < 2
-                              ? 'Nhập họ tên'
-                              : null,
-                        ),
-                        const SizedBox(height: 15),
-                      ],
-                      TextFormField(
-                        controller: email,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'ban@congty.vn',
-                          prefixIcon: Icon(Icons.alternate_email),
-                        ),
-                        validator: (v) =>
-                            RegExp(
-                              r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
-                            ).hasMatch(v ?? '')
-                            ? null
-                            : 'Email chưa hợp lệ',
-                      ),
-                      const SizedBox(height: 15),
-                      TextFormField(
-                        controller: password,
-                        obscureText: obscure,
-                        autofillHints: const [AutofillHints.password],
-                        decoration: InputDecoration(
-                          labelText: 'Mật khẩu',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() => obscure = !obscure),
-                            icon: Icon(
-                              obscure
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                          ),
-                        ),
-                        validator: (v) => (v?.length ?? 0) < (register ? 10 : 1)
-                            ? (register
-                                  ? 'Tối thiểu 10 ký tự'
-                                  : 'Nhập mật khẩu')
-                            : null,
-                      ),
-                      const SizedBox(height: 15),
-                      if (register)
-                        TextFormField(
-                          controller: phone,
-                          keyboardType: TextInputType.phone,
-                          decoration: const InputDecoration(
-                            labelText: 'Điện thoại (tùy chọn)',
-                            hintText: '+84901234567',
-                            prefixIcon: Icon(Icons.phone_outlined),
-                          ),
-                          validator: (v) =>
-                              v!.isNotEmpty &&
-                                  !RegExp(r'^\+[1-9]\d{7,14}$').hasMatch(v)
-                              ? 'Dùng định dạng +84901234567'
-                              : null,
-                        )
-                      else
-                        Row(
-                          children: [
-                            const Expanded(
-                              child: Text(
-                                'Nhận OTP qua',
-                                style: TextStyle(color: muted, fontSize: 12),
-                              ),
-                            ),
-                            ChoiceChip(
-                              label: const Text('Email'),
-                              selected: channel == 'email',
-                              onSelected: (_) =>
-                                  setState(() => channel = 'email'),
-                            ),
-                            const SizedBox(width: 8),
-                            ChoiceChip(
-                              label: const Text('SMS'),
-                              selected: channel == 'sms',
-                              onSelected: (_) =>
-                                  setState(() => channel = 'sms'),
-                            ),
-                          ],
-                        ),
-                    ],
                     if (error != null)
                       Padding(
-                        padding: const EdgeInsets.only(top: 16),
+                        padding: const EdgeInsets.only(top: 12),
                         child: Text(
                           error!,
                           style: const TextStyle(color: Colors.redAccent),
                         ),
                       ),
-                    const SizedBox(height: 23),
+                    const SizedBox(height: 20),
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
                         onPressed: busy ? null : submit,
-                        child: busy
-                            ? const SizedBox(
-                                width: 19,
-                                height: 19,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : Text(
-                                challenge != null
-                                    ? 'Xác nhận & đăng nhập'
-                                    : register
-                                    ? 'Tạo tài khoản'
-                                    : 'Tiếp tục với OTP',
-                              ),
+                        child: Text(
+                          busy
+                              ? 'Đang kết nối…'
+                              : challenge != null
+                              ? 'Xác nhận & đăng nhập'
+                              : register
+                              ? 'Tạo tài khoản'
+                              : 'Tiếp tục với OTP',
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 15),
-              if (challenge == null) ...[
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      child: Text(
-                        'hoặc',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 15),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: busy
-                        ? null
-                        : () => run(() async {
-                            if (widget.session.api.demo ||
-                                !widget.session.api.configured) {
-                              throw ApiException(
-                                'Google OAuth cần API đã deploy và GOOGLE_CLIENT_ID.',
-                              );
-                            }
-                            final random = Random.secure();
-                            final verifier = base64UrlEncode(
-                              List<int>.generate(
-                                48,
-                                (_) => random.nextInt(256),
-                              ),
-                            ).replaceAll('=', '');
-                            await widget.session.storage.write(
-                              key: 'oauth_verifier',
-                              value: verifier,
-                            );
-                            final challenge = sha256
-                                .convert(utf8.encode(verifier))
-                                .toString();
-                            await launchUrl(
-                              Uri.parse(
-                                '${Api.baseUrl}/auth/google/start?app_challenge=$challenge',
-                              ),
-                              mode: LaunchMode.externalApplication,
-                              webOnlyWindowName: '_self',
-                            );
-                          }),
-                    icon: const Text(
-                      'G',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    label: const Text('Tiếp tục với Google'),
+              if (busy)
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: Text(
+                    'Máy chủ Free có thể cần khoảng 90 giây để khởi động.',
+                    style: TextStyle(color: muted, fontSize: 11),
                   ),
                 ),
+              if (challenge != null)
+                Center(
+                  child: TextButton(
+                    onPressed: busy || cooldown > 0
+                        ? null
+                        : () => run(() async {
+                            setChallenge(
+                              await widget.session.api.request(
+                                'POST',
+                                '/auth/resend-otp',
+                                {'challengeId': challenge!['challengeId']},
+                              ),
+                            );
+                          }),
+                    child: Text(
+                      cooldown > 0 ? 'Gửi lại sau ${cooldown}s' : 'Gửi lại OTP',
+                    ),
+                  ),
+                ),
+              if (challenge == null && !register) ...[
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
-                  child: TextButton.icon(
-                    onPressed: busy
-                        ? null
-                        : () => run(widget.session.biometricLogin),
+                  child: OutlinedButton.icon(
+                    onPressed: busy ? null : faceLogin,
                     icon: const Icon(Icons.face_retouching_natural),
-                    label: const Text('Đăng nhập Face ID / vân tay'),
+                    label: const Text('Đăng nhập bằng khuôn mặt'),
                   ),
                 ),
               ],
@@ -444,29 +339,43 @@ class _AuthScreenState extends State<AuthScreen> {
                         }),
                   child: Text(
                     challenge != null
-                        ? 'Quay lại / gửi mã mới'
+                        ? 'Quay lại'
                         : register
                         ? 'Đã có tài khoản? Đăng nhập'
                         : 'Chưa có tài khoản? Đăng ký',
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 16),
-              Center(
-                child: TextButton.icon(
-                  onPressed: busy ? null : () => widget.session.enterDemo(),
-                  icon: const Icon(Icons.play_circle_outline, size: 18),
-                  label: const Text('Khám phá bản demo'),
+              if (const bool.fromEnvironment(
+                'SHOW_DEMO',
+                defaultValue: true,
+              )) ...[
+                const Divider(),
+                Center(
+                  child: TextButton.icon(
+                    onPressed: busy ? null : () => widget.session.enterDemo(),
+                    icon: const Icon(Icons.play_circle_outline),
+                    label: const Text('Khám phá bản demo'),
+                  ),
                 ),
-              ),
-              if (!widget.session.api.configured && !widget.session.api.demo)
                 const Text(
-                  'Chưa kết nối máy chủ. Bản demo dùng dữ liệu mẫu trên thiết bị; không gửi OTP thật.',
-                  textAlign: TextAlign.center,
+                  'Demo dùng dữ liệu mẫu riêng; không gửi OTP hay chấm công thật.',
                   style: TextStyle(color: muted, fontSize: 10),
                 ),
+              ],
+              const SizedBox(height: 22),
+              const Row(
+                children: [
+                  Icon(Icons.https_outlined, size: 15, color: muted),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Email OTP · API HTTPS · Dữ liệu theo phân quyền',
+                      style: TextStyle(color: muted, fontSize: 10),
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -480,9 +389,8 @@ class _AuthScreenState extends State<AuthScreen> {
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.all(50),
+                  padding: const EdgeInsets.all(48),
                   decoration: BoxDecoration(
-                    color: forest,
                     borderRadius: BorderRadius.circular(30),
                     gradient: const LinearGradient(
                       colors: [Color(0xFF153F35), Color(0xFF1A6B56)],
@@ -490,17 +398,16 @@ class _AuthScreenState extends State<AuthScreen> {
                       end: Alignment.bottomRight,
                     ),
                   ),
-                  child: Column(
+                  child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Tag(
+                      Tag(
                         'MAKE ROOM FOR A BETTER DAY',
                         color: Color(0xFFC9E9C9),
-                        background: Color(0xFF35705D),
                       ),
-                      const SizedBox(height: 34),
-                      const Text(
+                      SizedBox(height: 34),
+                      Text(
                         'Đi làm có nhịp.\nCuộc sống\ncó khoảng.',
                         style: TextStyle(
                           fontFamily: 'Lora',
@@ -510,32 +417,19 @@ class _AuthScreenState extends State<AuthScreen> {
                           letterSpacing: -1.5,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
+                      SizedBox(height: 24),
+                      Text(
                         'Chấm công thông minh. Kết nối đội ngũ.\nTrọn vẹn từng ngày làm việc.',
                         style: TextStyle(color: Color(0xFFAFD0BF), height: 1.9),
                       ),
-                      const SizedBox(height: 50),
-                      Container(
-                        width: 170,
-                        height: 170,
-                        decoration: const BoxDecoration(
-                          color: peach,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
+                      SizedBox(height: 40),
+                      CircleAvatar(
+                        radius: 70,
+                        backgroundColor: peach,
+                        child: Icon(
                           Icons.wb_sunny_outlined,
                           color: forest,
-                          size: 80,
-                        ),
-                      ),
-                      const SizedBox(height: 40),
-                      const Text(
-                        '01 / MỘT NGÀY TỐT BẮT ĐẦU TỪ BẠN',
-                        style: TextStyle(
-                          color: Color(0xFFAFD0BF),
-                          letterSpacing: 1.8,
-                          fontSize: 9,
+                          size: 70,
                         ),
                       ),
                     ],

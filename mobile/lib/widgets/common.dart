@@ -183,6 +183,7 @@ String initials(String name) => name
 String roleName(String? role) => switch (role) {
   'admin' => 'Quản trị viên',
   'employee' => 'Nhân viên',
+  'manager' => 'Quản lý chi nhánh',
   _ => 'Khách hàng',
 };
 

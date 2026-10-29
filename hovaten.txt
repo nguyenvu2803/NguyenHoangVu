@@ -1,0 +1,44 @@
+HO SO BAI LAM CA NHAN
+Ho va ten: Nguyễn Hoàng Vũ
+MSSV: 2380602586
+Ten project / ten app: NguyenHoangVu
+De tai: App cham cong cho nhan vien
+Cong nghe mobile: Flutter (Android)
+Backend: Node.js / Express / PostgreSQL, dung chung backend nhom 8 co ghi nguon
+
+LINK NOP BAI
+Frontend Flutter: https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/mobile
+Backend tich hop: https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/backend_shared
+Backend goc dung chung: https://github.com/wom-sama/nguyen-hoai-nam-2380601398-api
+API public: https://nguyen-hoai-nam-2380601398-api.onrender.com/v1
+Health API: https://nguyen-hoai-nam-2380601398-api.onrender.com/v1/health
+YouTube demo: CHUA_CO_LINK - chu bai se quay va tai video that len YouTube
+
+CHUC NANG DA XAY DUNG TRONG SOURCE BAN TICH HOP
+1. Dang ky qua email, xac minh OTP; tai khoan moi cho admin duyet va gan chi nhanh.
+2. Dang nhap bang ten dang nhap + mat khau + OTP email 6 so; gui lai OTP, dem han va cooldown; xoay refresh token, dang xuat thu hoi phien.
+3. Phan quyen admin / quan ly chi nhanh / nhan vien. Dashboard va menu theo vai tro; backend kiem tra quyen. Pending/suspended vao trang trang thai rieng.
+4. CRUD nhan vien, chi nhanh, ca lam; tim kiem; phan ca. CRUD don dieu chinh khi pending, duyet/tu choi boi nguoi co quyen, giu dau vet gio goc. Du lieu co lich su bi gioi han xoa/sua de bao ve bang cong.
+5. Ba chuc nang nang cao:
+   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera; backend YuNet/SFace doi chieu 2D, van yeu cau OTP email. Chua co chung nhan liveness.
+   b. Chia se mot vi tri GPS hien tai, chon han 15/30/60/120 phut, dung som, xem theo phan quyen va mo ban do; khong theo doi nen.
+   e. Tao/hien thi QR ca va quet bang camera de chon ca duoc phan. QR khong phai chu ky chong sao chep; cham cong can GPS va may chu xac minh.
+6. Cham cong vao/ra ca, GPS trong ban kinh chi nhanh va cua so thoi gian; bao cao thang, xuat CSV, tach gio hieu luc va gio thiet bi goc.
+7. Tinh nang de xuat Nhip can bang: canh bao khoang nghi giua ca duoi 11 gio, ca tren 10 gio, thieu gio vao/ra. Chua khao sat thi truong de khang dinh tat ca app khac chua co.
+8. Giao dien tieng Viet xanh ngoc/kem, font Manrope/Lora dong goi, bo cuc mobile; config HTTPS chung de chay lai.
+
+DOI CHIEU YEU CAU VA DIEM DU KIEN
+- Nhom CRUD: muc toi da theo de 4.5 diem.
+- Ba chuc nang nang cao: muc toi da theo de 3.5 diem.
+- Tinh nang moi de xuat: muc toi da 1 diem; phu thuoc giang vien chap nhan do moi.
+- Giao dien, de dung, chay lai: muc toi da 1 diem.
+- Tu du kien: 9/10 NEU da demo thanh cong CRUD, OTP, phan quyen va ca ba tinh nang nang cao tren moi truong that; khong phai diem da duoc xac nhan.
+- Chua du bang chung de tu cong nhan 9/10 o thoi diem chua co tai khoan active/OTP va video demo that. Khong tu dong gan diem toi da chi vi co source.
+
+BANG CHUNG VA GIOI HAN
+Xem docs/VERIFICATION.md cho so test/build va ket qua thuc te moi nhat.
+HTTP public health/auth da kiem tra; test Flutter dung fixture va test backend dung pg-mem/mailbox rieng, khong thay nghiem thu OTP that hay PostgreSQL production.
+Chua co tai khoan app active; can chu API chung duyet tai khoan sau xac minh email de nghiem thu CRUD/cham cong that. Camera/GPS va doi chieu khuon mat production can nguon anh/vi tri hop le.
+API dang chay la backend chung; sua source cuc bo chua duoc deploy len dich vu chung. Theo tai lieu upstream, database Free hien tai het han 28/11/2026; can chu dich vu kiem tra truoc ngay cham bai.
+Khong ghi nhan Google OAuth, SMS, NFC, Barcode, Face ID he dieu han la tinh nang da nghiem thu cua ban production nay.
+Chua co link YouTube. Can cap nhat link video that truoc khi nop.

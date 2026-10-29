@@ -6,6 +6,7 @@ import 'core/session.dart';
 import 'core/theme.dart';
 import 'screens/auth.dart';
 import 'screens/shell.dart';
+import 'screens/live_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,12 +27,25 @@ class AttendanceApp extends StatelessWidget {
     localizationsDelegates: GlobalMaterialLocalizations.delegates,
     home: ListenableBuilder(
       listenable: session,
-      builder: (context, _) => session.user == null
-          ? AuthScreen(session: session)
-          : AppShell(
-              key: ValueKey('${session.user!['id']}-${session.api.demo}'),
-              session: session,
-            ),
+      builder: (context, _) {
+        if (session.user == null) return AuthScreen(session: session);
+        if (session.api.demo) {
+          return AppShell(
+            key: ValueKey('${session.user!['id']}-demo'),
+            session: session,
+          );
+        }
+        if (session.user!['status'] != 'active' ||
+            session.user!['emailVerified'] != true) {
+          return AccountWaiting(session: session);
+        }
+        return LiveShell(
+          key: ValueKey(
+            '${session.user!['id']}-${session.user!['role']}-${session.user!['branchId']}',
+          ),
+          session: session,
+        );
+      },
     ),
   );
 }
