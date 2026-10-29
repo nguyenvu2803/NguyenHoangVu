@@ -1,0 +1,5 @@
+{
+  "API_BASE_URL": "https://YOUR-DEPLOYED-API.onrender.com",
+  "DEMO_MODE": "false",
+  "ALLOW_INSECURE_DEV": "false"
+}
