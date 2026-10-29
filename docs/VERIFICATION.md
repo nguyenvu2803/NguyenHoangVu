@@ -14,6 +14,7 @@ Bản Flutter 1.1.0+2, Android package `vn.nguyenhoangvu.nguyen_hoang_vu`, nhãn
 | API HTTPS Internet | `/v1/health` 200; `/v1/me`, `/v1/employees`, `/v1/attendance` 401 và envelope AUTH_REQUIRED khi không có token |
 | Android release APK | **Build thành công**, khoảng 74.1 MB theo Flutter; `dist/NguyenHoangVu.apk`, production config 3 cờ false |
 | Máy ảo Android 13/API 33 | AVD riêng `NguyenHoangVu_QA`, 720×1280, host OpenGL; cài APK **Success**, màn đăng nhập native hiển thị được |
+| GitHub Actions trên Ubuntu | **Success** cả hai job backend/Flutter; gồm 91 test Node, analyze/test Flutter, phép thử Dart–Express và build APK release. Bằng chứng: https://github.com/nguyenvu2803/NguyenHoangVu/actions/runs/40894240644 |
 | GitHub source public | Đã push `61b5775` lên `nguyenvu2803/NguyenHoangVu`; link thư mục `mobile` và `backend_shared` đều HTTP 200 khi mở không đăng nhập |
 | Đăng ký từ APK public | **Đạt đăng ký + OTP email thật**: chủ email xác nhận đã nhập OTP thành công; APK hiển thị “Đã xác thực email.” và trạng thái chờ admin duyệt. Không ghi nhận đã active |
 | APK gọi API public | Gửi một lần username không tồn tại/mật khẩu kiểm thử; app nhận thông báo **Thông tin đăng nhập không hợp lệ.** từ API, không tự vào dashboard |
