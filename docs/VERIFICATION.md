@@ -15,7 +15,7 @@ Bản Flutter 1.1.0+2, Android package `vn.nguyenhoangvu.nguyen_hoang_vu`, nhãn
 | Android release APK | **Build thành công**, khoảng 74.1 MB theo Flutter; `dist/NguyenHoangVu.apk`, production config 3 cờ false |
 | Máy ảo Android 13/API 33 | AVD riêng `NguyenHoangVu_QA`, 720×1280, host OpenGL; cài APK **Success**, màn đăng nhập native hiển thị được |
 | GitHub source public | Đã push `61b5775` lên `nguyenvu2803/NguyenHoangVu`; link thư mục `mobile` và `backend_shared` đều HTTP 200 khi mở không đăng nhập |
-| Đăng ký từ APK public | Đã gửi một yêu cầu với email cá nhân được chọn; máy chủ chấp nhận, app chuyển sang challenge OTP. Chưa xác nhận Inbox hoặc OTP thành công |
+| Đăng ký từ APK public | **Đạt đăng ký + OTP email thật**: chủ email xác nhận đã nhập OTP thành công; APK hiển thị “Đã xác thực email.” và trạng thái chờ admin duyệt. Không ghi nhận đã active |
 | APK gọi API public | Gửi một lần username không tồn tại/mật khẩu kiểm thử; app nhận thông báo **Thông tin đăng nhập không hợp lệ.** từ API, không tự vào dashboard |
 | Giao diện có dữ liệu | Chụp 7 màn tham chiếu bằng HTTP fixture; tool capture **1/1 đạt**. Các ảnh `ui-fixture-*` không phải dữ liệu production |
 | Android 36 cũ | Gặp treo màn khởi động/DeadSystemException và System UI; đã dừng, chuyển AVD riêng API 33; không tính là kiểm thử đạt |
@@ -41,9 +41,10 @@ Log/credential riêng không tự đưa vào Git. Source ZIP không chứa node_
 
 ## Chưa xác nhận trên tài khoản production cá nhân
 
-- Người dùng chưa có tài khoản app active. Chưa hoàn tất đăng ký/OTP email thật, admin duyệt và gán chi nhánh; thiếu quyền quản trị API chung để tự hoàn tất bước duyệt.
+- Đã đăng ký và xác thực OTP email thật cho tài khoản cá nhân. Tài khoản `hoangvu2380602586` đang pending, APK đã xác nhận màn chờ duyệt. Cần admin API chung chuyển active và gán chi nhánh; không có quyền tự hoàn tất bước duyệt.
 - Chưa nghiệm thu CRUD/ba vai trò/chấm công trên dữ liệu production được cấp quyền. Không xóa/sửa dữ liệu chung của người khác để tạo bằng chứng.
 - Chưa xác nhận ảnh camera người dùng đăng ký/đăng nhập mặt thật, quét QR camera thật, GPS thật, mở bản đồ/chia sẻ hệ thống trên thiết bị có nguồn dữ liệu phù hợp. Máy ảo không tự chứng minh các mục này.
+- Ảnh xác nhận email/chờ duyệt giữ riêng trong `dist/android-email-verified-pending.png` vì chứa email cá nhân; không đưa ảnh này vào Git/gói nộp.
 - Test database dùng pg-mem, chưa xác nhận PostgreSQL production transaction/concurrency hay lưu qua restart cho tài khoản cá nhân.
 - Sửa backend chỉ có ở source cá nhân, **chưa deploy lên API chung** do chủ khác vận hành. APK đang kết nối URL chung hiện hoạt động.
 - Chưa quay/tải video YouTube. Đây là bước chủ bài sẽ thực hiện sau nghiệm thu; không có URL video giả.

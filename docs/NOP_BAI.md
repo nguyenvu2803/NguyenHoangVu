@@ -14,7 +14,7 @@ Frontend/backend nằm ở hai thư mục cùng repository cá nhân; backend up
 ## Cần đạt trước khi bấm nộp
 
 - Source GitHub public mở được, bao gồm pubspec.lock, mã Flutter và Node package-lock/migrations; không có secret.
-- Cài APK production, DEMO_MODE/SHOW_DEMO/ALLOW_INSECURE_DEV đều false; truy cập API Internet không qua máy lập trình.
+- Cài APK production, DEMO_MODE/SHOW_DEMO/ALLOW_INSECURE_DEV đều false; truy cập API Internet không qua máy lập trình. Đã thử đăng ký và OTP email thật thành công; tài khoản cá nhân hiện chờ admin duyệt.
 - Có tài khoản cá nhân active và tài khoản quản trị test hợp lệ để ghi hình đủ quyền/CRUD; OTP email thật đến hộp thư.
 - Quay đủ mặt, chia sẻ vị trí, QR và Nhịp cân bằng, ghi rõ giới hạn máy ảo nếu có. Không dùng screenshot fixture thay video tích hợp thật.
 - `hovaten.txt` ghi đúng Nguyễn Hoàng Vũ — 2380602586, chức năng, điểm dự kiến có điều kiện, link video thật.
