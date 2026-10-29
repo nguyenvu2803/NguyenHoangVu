@@ -14,6 +14,8 @@ Bản Flutter 1.1.0+2, Android package `vn.nguyenhoangvu.nguyen_hoang_vu`, nhãn
 | API HTTPS Internet | `/v1/health` 200; `/v1/me`, `/v1/employees`, `/v1/attendance` 401 và envelope AUTH_REQUIRED khi không có token |
 | Android release APK | **Build thành công**, khoảng 74.1 MB theo Flutter; `dist/NguyenHoangVu.apk`, production config 3 cờ false |
 | Máy ảo Android 13/API 33 | AVD riêng `NguyenHoangVu_QA`, 720×1280, host OpenGL; cài APK **Success**, màn đăng nhập native hiển thị được |
+| GitHub source public | Đã push `61b5775` lên `nguyenvu2803/NguyenHoangVu`; link thư mục `mobile` và `backend_shared` đều HTTP 200 khi mở không đăng nhập |
+| Đăng ký từ APK public | Đã gửi một yêu cầu với email cá nhân được chọn; máy chủ chấp nhận, app chuyển sang challenge OTP. Chưa xác nhận Inbox hoặc OTP thành công |
 | APK gọi API public | Gửi một lần username không tồn tại/mật khẩu kiểm thử; app nhận thông báo **Thông tin đăng nhập không hợp lệ.** từ API, không tự vào dashboard |
 | Giao diện có dữ liệu | Chụp 7 màn tham chiếu bằng HTTP fixture; tool capture **1/1 đạt**. Các ảnh `ui-fixture-*` không phải dữ liệu production |
 | Android 36 cũ | Gặp treo màn khởi động/DeadSystemException và System UI; đã dừng, chuyển AVD riêng API 33; không tính là kiểm thử đạt |

@@ -12,7 +12,9 @@
 | Health public | https://nguyen-hoai-nam-2380601398-api.onrender.com/v1/health |
 | Video YouTube | Chưa có; chủ bài sẽ quay và tải lên theo `docs/KICH_BAN_VIDEO.md` |
 
-Trạng thái kiểm tra thực tế nằm trong [VERIFICATION.md](docs/VERIFICATION.md). Link source chỉ coi là bàn giao sau khi GitHub có commit; video chỉ bổ sung sau khi tải lên và kiểm tra quyền xem.
+Source đã có trên GitHub public; hai link frontend/backend mở được không cần đăng nhập. Trạng thái kiểm tra thực tế nằm trong [VERIFICATION.md](docs/VERIFICATION.md). Video bổ sung sau khi quay, tải lên và kiểm tra quyền xem.
+
+<img src="docs/android-production-login.png" alt="APK production trên máy ảo Android 13" width="320">
 
 ## Chức năng bản tích hợp
 
