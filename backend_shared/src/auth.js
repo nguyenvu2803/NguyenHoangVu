@@ -51,7 +51,7 @@ export function createAuth({ pool, config, mailer, now }) {
     const { rows } = await pool.query('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE u.id=$1 AND s.id=$2 AND s.revoked_at IS NULL AND u.deleted_at IS NULL', [payload.sub, payload.sid]);
     if (!rows[0]) return next(new ApiError(401, 'SESSION_REVOKED', 'Phiên đăng nhập đã kết thúc.'));
     if (rows[0].status === 'suspended') return next(new ApiError(403, 'ACCOUNT_SUSPENDED', 'Tài khoản đã bị tạm ngưng.'));
-    req.user = rows[0]; req.sessionId = payload.sid; next();
+    req.user = rows[0]; req.sessionId = payload.sid; req.tokenExpiresAt = payload.exp * 1000; next();
   };
   const requireActive = (req, _res, next) => req.user.status === 'active' && req.user.email_verified
     ? next() : next(new ApiError(403, 'ACCOUNT_PENDING', 'Tài khoản đang chờ quản trị viên phê duyệt.'));

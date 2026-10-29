@@ -8,7 +8,8 @@ Phân biệt code/test đã đạt và kiểm thử tích hợp production còn 
 | Admin/manager/employee | Backend quyền có test; UI fixture 3 vai trò/320px; pending chặn dashboard | Tài khoản được cấp quyền trên API chung |
 | CRUD | Express regression + Dart client create/read/update/delete; form gửi camelCase | CRUD dữ liệu test riêng qua APK với admin hợp lệ |
 | Chấm công | Backend GPS/window/owner/duplicate; Dart vào/ra và kiểm tra giờ gốc/correction | GPS mới, chi nhánh thật, ca trong cửa sổ, kết quả công production |
-| QR | Encode/decode ca được phân, từ chối QR lạ/sai version; màn QR/scanner có code | Camera đọc QR trên máy ảo có nguồn ảnh hoặc điện thoại |
+| Dịch tin nhắn realtime | Test ACL/lịch sử/idempotency, SSE hai client, thu hồi phiên; kiểm thử Dart–Express và ML Kit Android được ghi trong VERIFICATION | Deploy chat public, hai tài khoản active, video tin đến và dịch tự động |
+| QR (tiện ích phụ) | Encode/decode ca được phân, từ chối QR lạ/sai version; màn QR/scanner có code | Camera đọc QR trên máy ảo có nguồn ảnh hoặc điện thoại |
 | Khuôn mặt | Model YuNet/SFace CPU thật; API enroll/login/OTP/delete qua Dart client | Người dùng chụp/enroll/login camera trên API chung |
 | Chia sẻ vị trí | TTL/phạm vi/dừng ở backend; Dart tạo/đọc/dừng; URL bản đồ được kiểm tra | GPS native, admin thấy đúng dữ liệu thật, mở bản đồ |
 | Báo cáo/CSV | Đọc report thật qua Dart/Express; giữ giờ gốc sau correction; CSV escape | Dữ liệu thực, share sheet native |

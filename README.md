@@ -19,12 +19,13 @@ Source đã có trên GitHub public; hai link frontend/backend mở được kh�
 ## Chức năng bản tích hợp
 
 - Đăng ký email, xác minh OTP; đăng nhập tên đăng nhập + mật khẩu + OTP email. OTP 6 số, hết hạn 10 phút, cooldown gửi lại và giới hạn thử sai tại backend.
-- Phân quyền **admin / manager / employee**. Admin quản trị toàn bộ; manager quản lý chi nhánh; employee xem dữ liệu cá nhân. Tài khoản pending/suspended có màn hình riêng, không tự nâng quyền.
+- **Một APK, ba giao diện theo quyền**: nhân viên/người dùng, quản lý chi nhánh, quản trị viên. Phân quyền **admin / manager / employee**. Admin quản trị toàn bộ; manager quản lý chi nhánh; employee xem dữ liệu cá nhân. Tài khoản pending/suspended có màn hình riêng, không tự nâng quyền.
 - CRUD nhân viên, chi nhánh và ca làm theo quyền. Đơn điều chỉnh công có tạo/sửa/xóa khi pending và duyệt/từ chối bởi người có quyền; giữ lịch sử công gốc.
 - Chấm vào/ra ca bằng GPS mới, kiểm tra bán kính chi nhánh, sai số tối đa 100m, ca được phân và cửa sổ giờ. Máy chủ ghi thời điểm chấm công.
 - **Đăng nhập khuôn mặt qua camera**: đăng ký/xóa mẫu; backend YuNet/SFace đối chiếu ảnh; khớp mặt vẫn yêu cầu OTP email. Đây là nhận diện 2D, chưa có chứng nhận liveness.
 - **Chia sẻ vị trí**: lấy một vị trí hiện tại, chọn hạn 15/30/60/120 phút, dừng sớm; admin/manager đọc theo quyền; mở bản đồ khi người dùng chọn. Không theo dõi nền.
-- **QR**: tạo/hiển thị QR ca và quét bằng camera để chọn ca được phân. QR là mã chọn ca, không phải bằng chứng hiện diện hay chữ ký chống sao chép; GPS và phân quyền backend xác thực việc chấm công.
+- **Dịch tin nhắn realtime**: hội thoại riêng qua SSE có Bearer token; người nhận trong chi nhánh hoặc admin. ML Kit dịch Việt–Anh–Trung trên Android, tự dịch tin đến và xem trước bản nháp, giữ bản gốc. Tải mô hình lần đầu cần Internet; không cần API key trả phí. **Backend public hiện chưa có route chat mới**; chủ API triển khai theo [DEPLOY_CHAT.md](docs/DEPLOY_CHAT.md).
+- QR là **tiện ích phụ, không tính trong ba chức năng nâng cao đã chọn**: tạo/hiển thị QR ca và quét bằng camera để chọn ca được phân. QR là mã chọn ca, không phải bằng chứng hiện diện hay chữ ký chống sao chép; GPS và phân quyền backend xác thực việc chấm công.
 - Báo cáo tháng và xuất CSV; hiển thị thời gian hiệu lực sau điều chỉnh và thời gian thiết bị gốc.
 - Đề xuất **Nhịp cân bằng**: cảnh báo khoảng nghỉ giữa ca dưới 11 giờ, ca dài hơn 10 giờ và thiếu giờ vào/ra. Chưa nghiên cứu toàn bộ thị trường để tuyên bố tính năng chưa tồn tại ở app khác.
 
@@ -81,7 +82,9 @@ flutter analyze --no-pub
 flutter test --no-pub
 ```
 
-Từ root, `python3 scripts/test_backend_integration.py` chạy Dart API client gọi Express thật với pg-mem/mailbox tách biệt, bao gồm OTP, phân quyền, CRUD, GPS payload, mặt, báo cáo và đăng xuất. Test chờ cooldown OTP 61 giây; đây không phải phép thử OTP email hay GPS phần cứng production. Cần Node.js >=22 trên PATH và model đã tải.
+Từ root, `python3 scripts/test_backend_integration.py` chạy Dart API client gọi Express thật với pg-mem/mailbox tách biệt, bao gồm OTP, phân quyền, CRUD, GPS payload, mặt, gửi/nhận chat qua SSE, báo cáo và đăng xuất. Test chờ cooldown OTP 61 giây; đây không phải phép thử OTP email hay GPS phần cứng production. Cần Node.js >=22 trên PATH và model đã tải.
+
+Kiểm thử mô hình dịch thật trên Android: `cd mobile && flutter test integration_test/translation_test.dart -d emulator-5554`. Lần đầu tải mô hình cần mạng và có thể mất vài phút.
 
 Backend cần Node.js >=22. Khi cài có thể đặt `ONNXRUNTIME_NODE_INSTALL=skip` để dùng CPU, không tải CUDA. Test backend dùng pg-mem/mailbox riêng và model mặt thật; không gửi OTP thật, không thay thế kiểm tra PostgreSQL/thiết bị production.
 

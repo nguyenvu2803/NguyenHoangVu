@@ -9,3 +9,7 @@
 Backend `backend_shared/` là nguồn dùng chung được ghi rõ tại INTEGRATION_NGUYENHOANGVU.md. `backend/` và Docker Compose cũ không phục vụ APK production này. Mỗi bản cài dùng cùng URL public để chia sẻ dữ liệu; dữ liệu local demo không đồng bộ server.
 
 Kiểm thử được tách theo bằng chứng: Flutter với HTTP fixture; Express/SQL với pg-mem, mailbox và model thật; HTTP public không token; APK native trên máy ảo; đăng nhập/CRUD có quyền, email/GPS/camera production cần tài khoản/thiết bị phù hợp.
+
+Một APK cung cấp ba giao diện theo role trả từ backend. Entry Tin nhắn mở danh bạ/hội thoại riêng, không thêm chat vào tải dashboard để API cũ không làm hỏng các màn chấm công. `core/chat.dart` quản lý SSE Bearer, cursor bigint, dedupe, UUID gửi lại, reconnect/backoff, dừng khi app về nền. Khi phiên hết hạn, route chat được đóng.
+
+`core/message_translation.dart` dùng Google ML Kit native Android; tải mô hình Việt/Anh/Trung sau thao tác Bật dịch, cache bản dịch, tự dịch tin đến. Bản nháp debounce 400 ms với revision chống kết quả cũ. Bản gốc luôn hiển thị và được gửi lên backend. Backend SSE dùng PostgreSQL làm cursor, kiểm tra thay đổi bằng poll 1.5 giây, heartbeat 15 giây; giữ đúng dữ liệu khi chạy nhiều process. Đây là realtime gần tức thời, không phải từng phím gõ hay theo dõi nền.

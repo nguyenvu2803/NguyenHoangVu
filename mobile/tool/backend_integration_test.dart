@@ -1,9 +1,11 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
 import 'package:nguyen_hoang_vu/core/api.dart';
 import 'package:nguyen_hoang_vu/core/live.dart';
+import 'package:nguyen_hoang_vu/core/chat.dart';
 
 void main() {
   const endpoint = String.fromEnvironment('NHV_TEST_API_URL');
@@ -19,7 +21,7 @@ void main() {
       Future<Json> verify(Api api, Json challenge, String email) async {
         final mailbox =
             jsonDecode(await File(mailboxFile).readAsString()) as List;
-      final message = mailbox.lastWhere((m) => m['email'] == email);
+        final message = mailbox.lastWhere((m) => m['email'] == email);
         final result = Json.from(
           await api.request('POST', '/auth/verify-otp', {
             'challengeId': challenge['challengeId'],
@@ -75,6 +77,28 @@ void main() {
       });
       final active = Json.from(await worker.request('GET', '/me'));
       expect(active['status'], 'active');
+      final receiverChat = ChatController(worker, adminUser['id']);
+      final senderChat = ChatController(admin, workerUser['id']);
+      addTearDown(receiverChat.dispose);
+      addTearDown(senderChat.dispose);
+      final connected = Completer<void>(), received = Completer<void>();
+      receiverChat.addListener(() {
+        if (receiverChat.online && !connected.isCompleted) {
+          connected.complete();
+        }
+        if (receiverChat.messages.any(
+              (row) => row['text'] == 'Hello from the manager',
+            ) &&
+            !received.isCompleted) {
+          received.complete();
+        }
+      });
+      receiverChat.start();
+      await connected.future.timeout(const Duration(seconds: 10));
+      expect(await senderChat.send('Hello from the manager', 'en'), true);
+      await received.future.timeout(const Duration(seconds: 10));
+      expect(receiverChat.messages.single['sourceLanguage'], 'en');
+      receiverChat.pause();
       final adminData = LiveData(admin, adminUser),
           workerData = LiveData(worker, active);
       await adminData.load();
@@ -150,15 +174,15 @@ void main() {
       final image = faceImageBase64(await File(faceFile).readAsBytes());
       await worker.request('POST', '/face/enroll', {'imageBase64': image});
       expect((await worker.request('GET', '/face/status'))['enrolled'], isTrue);
-    // Respect the real server's OTP cooldown, including after registration.
-    await expectLater(
-      worker.request('POST', '/auth/face-login', {
-        'username': 'contract_worker',
-        'imageBase64': image,
-      }),
-      throwsA(isA<ApiException>().having((e) => e.status, 'status', 429)),
-    );
-    await Future<void>.delayed(const Duration(seconds: 61));
+      // Respect the real server's OTP cooldown, including after registration.
+      await expectLater(
+        worker.request('POST', '/auth/face-login', {
+          'username': 'contract_worker',
+          'imageBase64': image,
+        }),
+        throwsA(isA<ApiException>().having((e) => e.status, 'status', 429)),
+      );
+      await Future<void>.delayed(const Duration(seconds: 61));
       final faceChallenge = Json.from(
         await worker.request('POST', '/auth/face-login', {
           'username': 'contract_worker',

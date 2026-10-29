@@ -73,7 +73,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     await save('ui-fixture-dashboard-desktop');
-    await tester.tap(find.text('Quản lý'));
+    await tester.tap(find.text('Quản trị'));
     await tester.pumpAndSettle();
     await save('ui-fixture-management-desktop');
     await tester.pumpWidget(const SizedBox());

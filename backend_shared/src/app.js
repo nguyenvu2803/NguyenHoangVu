@@ -3,11 +3,14 @@ import { ApiError, publicUser, rateLimit } from './security.js';
 import { createAuth } from './auth.js';
 import { createResources } from './resources.js';
 import { createNotifications } from './notifications.js';
+import { createChat } from './chat.js';
 
 export function createApp({ pool, config, mailer, now = () => new Date(), pushProvider, autoStartNotifications = false }) {
   const app = express();
   const notifications = createNotifications({ pool, config, now, provider: pushProvider });
   app.locals.notifications = notifications;
+  const chat = createChat({ pool, now, pollMilliseconds: config.chatPollMilliseconds ?? 1500 });
+  app.locals.chat = chat;
   app.disable('x-powered-by');
   app.set('trust proxy', config.trustProxy === true ? 1 : false);
   app.use((_req, res, next) => {
@@ -21,13 +24,13 @@ export function createApp({ pool, config, mailer, now = () => new Date(), pushPr
     next();
   });
   app.get(['/health','/v1/health'], async (_req, res) => {
-    try { await pool.query('SELECT 1'); res.json({ data: { status: 'ok', service: 'attendance-api' } }); }
+    try { await pool.query('SELECT 1'); res.json({ data: { status: 'ok', service: 'attendance-api', features: { realtimeChat: true } } }); }
     catch { res.status(503).json({ error: { code: 'DATABASE_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' } }); }
   });
   const auth = createAuth({ pool, config, mailer, now });
   app.use('/v1/auth', auth.router);
   app.get('/v1/me', auth.requireAuth, (req, res) => res.json({ data: publicUser(req.user) }));
-  app.use('/v1', auth.requireAuth, auth.requireActive, notifications.router,
+  app.use('/v1', auth.requireAuth, auth.requireActive, notifications.router, chat.router,
     createResources({ pool, now, timeZone: config.timeZone, enqueueNotification: notifications.enqueue }));
   app.use((_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Không tìm thấy API.' } }));
   app.use((error, _req, res, _next) => {

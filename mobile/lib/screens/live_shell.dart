@@ -6,6 +6,7 @@ import '../widgets/common.dart';
 import 'live_attendance.dart';
 import 'live_manage.dart';
 import 'live_profile.dart';
+import 'chat.dart';
 
 class LiveShell extends StatefulWidget {
   final Session session;
@@ -68,7 +69,11 @@ class _LiveShellState extends State<LiveShell> {
       'Tổng quan',
       'Ca của tôi',
       'Điều chỉnh',
-      data.manages ? 'Quản lý' : 'Báo cáo',
+      data.admin
+          ? 'Quản trị'
+          : data.manages
+          ? 'Đội ngũ'
+          : 'Báo cáo',
       'Hồ sơ',
     ];
     final icons = [
@@ -112,6 +117,15 @@ class _LiveShellState extends State<LiveShell> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Tin nhắn · Dịch realtime',
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => ChatContacts(session: widget.session),
+              ),
+            ),
+            icon: const Icon(Icons.forum_outlined),
+          ),
           IconButton(
             tooltip: 'Báo cáo tháng',
             onPressed: !loaded || busy
@@ -407,8 +421,11 @@ class _Dashboard extends StatelessWidget {
         PageTitle(
           eyebrow: '${roleName(data.user['role'])} · ${data.month}',
           title: 'Chào ${data.user['fullName'].toString().split(' ').last}.',
-          subtitle:
-              'Một nơi cho lịch làm việc, chấm công và nhịp sống của bạn.',
+          subtitle: data.admin
+              ? 'Quản trị toàn hệ thống: tài khoản, chi nhánh và phân quyền.'
+              : data.manages
+              ? 'Quản lý chi nhánh: đội ngũ, phân ca và duyệt điều chỉnh.'
+              : 'Lịch cá nhân, chấm công, vị trí và trò chuyện đa ngôn ngữ.',
         ),
         Container(
           width: double.infinity,

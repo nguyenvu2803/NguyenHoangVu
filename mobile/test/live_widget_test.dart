@@ -102,6 +102,16 @@ void main() {
           AttendanceApp(key: ValueKey(role), session: session),
         );
         await tester.pumpAndSettle();
+        expect(
+          find.text(
+            role == 'admin'
+                ? 'Quản trị'
+                : role == 'manager'
+                ? 'Đội ngũ'
+                : 'Báo cáo',
+          ),
+          findsOneWidget,
+        );
         for (var index = 0; index < 5; index++) {
           await tester.tap(find.byType(NavigationDestination).at(index));
           await tester.pumpAndSettle();
@@ -173,7 +183,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(NavigationBar), findsNothing);
-    await tapVisible(tester, find.text('Quản lý'));
+    await tapVisible(tester, find.text('Quản trị'));
     expect(find.text('Vận hành có nhịp.'), findsOneWidget);
     await tester.tap(find.byTooltip('Báo cáo tháng'));
     await tester.pumpAndSettle();

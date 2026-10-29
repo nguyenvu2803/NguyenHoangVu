@@ -28,6 +28,7 @@ try {
   let shuttingDown = false;
   const close = () => {
     if (shuttingDown) return; shuttingDown = true;
+    app.locals.chat.stop();
     const pushStopped = app.locals.notifications.stop();
     server.close(async () => { await pushStopped; await pool.end(); process.exitCode = 0; });
     setTimeout(() => process.exit(1), 25000).unref();

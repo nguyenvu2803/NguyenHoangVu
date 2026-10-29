@@ -38,4 +38,7 @@ const app = createApp({ pool, config: {
 const server = app.listen(0, '127.0.0.1', () => {
   console.log(JSON.stringify({ endpoint: `http://127.0.0.1:${server.address().port}/v1`, mailboxFile, faceFile }));
 });
-process.on('SIGTERM', () => server.close(async () => { await pool.end(); process.exit(0); }));
+process.on('SIGTERM', () => {
+  app.locals.chat.stop();
+  server.close(async () => { await pool.end(); process.exit(0); });
+});

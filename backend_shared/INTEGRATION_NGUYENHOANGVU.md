@@ -10,6 +10,7 @@ Bản tích hợp cho **Nguyễn Hoàng Vũ — 2380602586**. Backend được d
 
 ## Điều chỉnh bản cá nhân
 
+- Bổ sung migration 005 và module chat riêng tư theo chi nhánh/admin; SSE có Bearer, kiểm tra lại phiên/quyền, lịch sử có cursor và gửi lại bằng UUID. Flutter dịch tin nhắn Việt/Anh/Trung qua ML Kit trên Android. Đây là phần bổ sung cá nhân, chưa triển khai trên API chung; hướng dẫn ở `../docs/DEPLOY_CHAT.md`.
 - Mẫu môi trường dùng tên Nguyễn Hoàng Vũ, nhãn email NguyenHoangVu và múi giờ `Asia/Ho_Chi_Minh`.
 - Ghim ONNX Runtime Node `1.20.1` thay `1.31.1`: gói mới không có binary `darwin/x64`, khiến nhận diện trả 503 trên máy Mac Intel hiện tại. Bản CPU được kiểm tra lại bằng model YuNet/SFace thật; thay đổi này không tự cập nhật dịch vụ Render chung.
 - Tăng thời gian tải model từ 120 lên 300 giây, giữ kiểm tra SHA256/kích thước và tải nguyên tử.
