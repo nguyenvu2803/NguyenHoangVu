@@ -31,13 +31,14 @@ void main() {
         client: MockClient((request) async {
           final query = request.url.queryParameters;
           calls++;
-          if (calls == 1)
+          if (calls == 1) {
             return http.Response(
               jsonEncode({
                 'data': {'messages': [], 'hasMore': false},
               }),
               200,
             );
+          }
           expect(query['afterId'], calls == 2 ? '0' : '1');
           return http.Response(
             jsonEncode({

@@ -9,7 +9,7 @@ Chủ API chung giữ quyền deploy và database. Source mới trong repository
 
 ## Chủ API cập nhật dịch vụ đang có
 
-1. Lấy source `backend_shared` bản mới từ repository cá nhân. So sánh thay đổi trước khi cập nhật backend chung; giữ nguyên `.env` và secret trong Render. File `dist/NguyenHoangVu-chat-backend.patch` trong bộ bàn giao chứa thay đổi chat để tham khảo/apply khi source nền khớp. Chạy `git apply --check -p2 /duong-dan/NguyenHoangVu-chat-backend.patch` tại root backend trước khi apply. Nếu có xung đột, đối chiếu source, không ép ghi đè.
+1. Lấy source `backend_shared` bản mới từ repository cá nhân. So sánh thay đổi trước khi cập nhật backend chung; giữ nguyên `.env` và secret trong Render. File `NguyenHoangVu-chat-backend.patch` trong bộ bàn giao chứa thay đổi chat để tham khảo/apply khi source nền khớp. Chạy `git apply --check -p2 /duong-dan/NguyenHoangVu-chat-backend.patch` tại root backend trước khi apply. Nếu có xung đột, đối chiếu source, không ép ghi đè.
 2. Thêm `src/chat.js`, migration `005_realtime_chat.sql`; cập nhật `src/app.js`, `src/auth.js`, `src/server.js`. Không sửa migration 001–004 đã áp dụng. Chat dùng dependency hiện có của Node backend; không cần dịch vụ trả phí hay API key dịch.
 3. Chạy `npm ci`, `npm run models:fetch`, `npm test` trên Node.js >=22. Máy cần hỗ trợ ONNX Runtime CPU của bản đã ghim. Khi deploy Render dùng build/start từ `render.yaml` hoặc cấu hình upstream tương ứng.
 4. Deploy commit đã kiểm tra. `src/server.js` tự chạy `applyMigrations()` trước khi mở cổng; có thể chạy `npm run migrate` riêng bằng môi trường database của chủ dịch vụ. Không chạy migration bằng URL database của người khác khi chưa được cấp quyền.

@@ -4,7 +4,7 @@ import zipfile
 root = Path(__file__).resolve().parents[1]
 output = root / 'dist' / 'NguyenHoangVu-source.zip'
 output.parent.mkdir(exist_ok=True)
-ignored = {'.git', '.venv', 'node_modules', '.dart_tool', 'build', '.gradle', '.idea', '__pycache__', '.pytest_cache', '.playwright-mcp', 'dist', 'ephemeral', '.symlinks', 'Pods', 'coverage'}
+ignored = {'.git', '.venv', 'node_modules', '.dart_tool', 'build', '.gradle', '.kotlin', '.idea', '__pycache__', '.pytest_cache', '.playwright-mcp', 'dist', 'ephemeral', '.symlinks', 'Pods', 'coverage'}
 excluded = {'local.properties', 'key.properties', 'production.json', '.DS_Store', '.flutter-plugins-dependencies', 'github-login.png', 'render-login.png'}
 with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
     for path in sorted(root.rglob('*')):
