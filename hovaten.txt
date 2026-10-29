@@ -38,7 +38,7 @@ DOI CHIEU YEU CAU VA DIEM DU KIEN
 
 BANG CHUNG VA GIOI HAN
 Xem docs/VERIFICATION.md cho so test/build va ket qua thuc te moi nhat.
-Da dang ky va xac thuc OTP email that thanh cong tren APK ket noi API public. Username hoangvu2380602586 dang pending, app hien thi cho admin duyet.
+Da dang ky va xac thuc OTP email that thanh cong tren APK ket noi API public. Lan xac nhan gan nhat: username hoangvu2380602586 pending, app hien thi cho admin duyet.
 HTTP public health/auth da kiem tra; test Flutter dung fixture va test backend dung pg-mem/mailbox rieng, khong thay nghiem thu OTP that hay PostgreSQL production.
 Chua co tai khoan app active; can chu API chung chuyen active va gan chi nhanh de nghiem thu CRUD/cham cong that. Camera/GPS va doi chieu khuon mat production can nguon anh/vi tri hop le.
 API dang chay la backend chung; sua source cuc bo chua duoc deploy len dich vu chung. Chat realtime moi CHUA hoat dong tren API public cu; xem docs/DEPLOY_CHAT.md de chu API cap nhat. Theo tai lieu upstream, database Free hien tai het han 28/11/2026; can chu dich vu kiem tra truoc ngay cham bai.

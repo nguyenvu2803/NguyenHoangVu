@@ -5,7 +5,7 @@ Bản Flutter 1.2.0+3, Android package `vn.nguyenhoangvu.nguyen_hoang_vu`, nhãn
 | Phép kiểm tra | Kết quả và phạm vi |
 |---|---|
 | Flutter analyze | **No issues found** sau chỉnh sửa tích hợp |
-| Flutter test | **30/30 đạt**: chat SSE/cursor/UUID, dịch tự động và bản nháp chống kết quả cũ, cùng API, token, OTP/form/routing, quyền hiển thị, QR, ảnh, CSV, Nhịp cân bằng, bố cục hẹp; HTTP được fixture trong nhóm test này |
+| Flutter test | **30/30 đạt**: chat SSE/cursor/UUID, dịch tự động và bản nháp chống kết quả cũ, API, token, OTP/form/routing, quyền hiển thị, QR, ảnh, CSV, Nhịp cân bằng, bố cục hẹp; HTTP được fixture trong nhóm test này |
 | Node.js backend | **100/100 đạt**, Node.js 24.22.1 trên Mac Intel; pg-mem/mailbox riêng; gồm nhận diện YuNet/SFace thật và các regression backend |
 | Dart client gọi Express thật | **1/1 đạt** qua `scripts/test_backend_integration.py`; đăng nhập OTP, pending/active, phân quyền, CRUD, chấm công payload GPS, đơn điều chỉnh, vị trí, mặt + OTP, gửi/nhận chat hai client qua SSE, báo cáo/CSV, logout |
 | Giới hạn test tích hợp | Express thật, HTTP thật qua loopback **chỉ trong test**, pg-mem và mailbox riêng; tọa độ/ảnh fixture, chưa gửi thư thật, không ghi production |
@@ -13,15 +13,15 @@ Bản Flutter 1.2.0+3, Android package `vn.nguyenhoangvu.nguyen_hoang_vu`, nhãn
 | Dependency production Node | `npm audit --omit=dev --audit-level=high`: **0 vulnerabilities** tại thời điểm kiểm tra |
 | API HTTPS Internet | `/v1/health` 200; `/v1/me`, `/v1/employees`, `/v1/attendance` 401 và envelope AUTH_REQUIRED khi không có token |
 | Android release APK | **Build thành công**, khoảng 119.9 MB theo Flutter; `dist/NguyenHoangVu.apk`, production config 3 cờ false |
-| Máy ảo Android 13/API 33 | AVD riêng `NguyenHoangVu_QA`, 720×1280, host OpenGL; kiểm thử mô hình dịch native đạt; APK release mới cần xác nhận cài/mở sau khi test runner gỡ APK kiểm thử |
-| GitHub Actions trên Ubuntu | Run 40901172792: backend 100 test đạt; Flutter bị lint thiếu braces trong test mới, đã sửa và sẽ chạy lại. Không dùng run cũ làm bằng chứng bản chat mới |
-| GitHub source public | Đã push bản chat `611290c` lên `nguyenvu2803/NguyenHoangVu`; link thư mục `mobile` và `backend_shared` đều HTTP 200 khi mở không đăng nhập |
+| Máy ảo Android 13/API 33 | AVD riêng `NguyenHoangVu_QA`, 720×1280, host OpenGL; cài APK release 1.2.0+3 **Success**, am start **Status ok**; xác nhận trực quan màn đăng nhập native, ảnh android-production-login.png |
+| GitHub Actions trên Ubuntu | **Success** cả hai job trên commit `2b29f8d`: 100 test backend, 30 test Flutter, analyze, Dart–Express và build/upload APK release. Bằng chứng: https://github.com/nguyenvu2803/NguyenHoangVu/actions/runs/40901850254 . Lỗi lint test mới ở run trước đã sửa |
+| GitHub source public | Đã push bản chat và sửa test `2b29f8d` lên `nguyenvu2803/NguyenHoangVu`; link thư mục `mobile` và `backend_shared` đều HTTP 200 khi mở không đăng nhập |
 | Đăng ký từ APK public | **Đạt đăng ký + OTP email thật**: chủ email xác nhận đã nhập OTP thành công; APK hiển thị “Đã xác thực email.” và trạng thái chờ admin duyệt. Không ghi nhận đã active |
-| APK gọi API public | Gửi một lần username không tồn tại/mật khẩu kiểm thử; app nhận thông báo **Thông tin đăng nhập không hợp lệ.** từ API, không tự vào dashboard |
+| APK gọi API public | Bản 1.1 trước đó đã gửi một lần username không tồn tại/mật khẩu kiểm thử; app nhận thông báo **Thông tin đăng nhập không hợp lệ.** từ API, không tự vào dashboard |
 | Dịch ML Kit Android thật | **1/1 đạt** trên emulator-5554/API33: tải mô hình, Việt→Anh **Hi**, Anh→Việt **Xin chào**, Anh→Trung **你好**. Không mock plugin/mô hình. Lần đầu test kỳ vọng duy nhất Hello nên fail; đã chấp nhận đồng nghĩa Hi và chạy lại đạt |
 | Chat backend/SSE | **9/9 đạt**, nằm trong tổng 100: phạm vi chi nhánh, hội thoại riêng, UUID gửi lại, phân trang, hai client mạng thật, logout/hết token/đổi chi nhánh đóng stream |
 | Chat API public | **Chưa triển khai**: health public thiếu `features.realtimeChat=true`; `scripts/check_chat_deployment.py` báo chưa deploy. Source/test tách biệt không thay thế bước này |
-| Giao diện có dữ liệu | Chụp 7 màn tham chiếu bằng HTTP fixture; tool capture **1/1 đạt**. Các ảnh `ui-fixture-*` không phải dữ liệu production |
+| Giao diện có dữ liệu | Có 7 màn tham chiếu cũ và một màn chat mobile mới bằng fixture; riêng tool capture chat **1/1 đạt**. Các ảnh `ui-fixture-*` không phải dữ liệu production |
 | Android 36 cũ | Gặp treo màn khởi động/DeadSystemException và System UI; đã dừng, chuyển AVD riêng API 33; không tính là kiểm thử đạt |
 
 ## Bằng chứng cục bộ
