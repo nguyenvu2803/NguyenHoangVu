@@ -14,15 +14,18 @@ API public: https://nguyen-hoai-nam-2380601398-api.onrender.com/v1
 Health API: https://nguyen-hoai-nam-2380601398-api.onrender.com/v1/health
 YouTube demo: CHUA_CO_LINK - chu bai se quay va tai video that len YouTube
 
+CHUC NANG CHUA THUC HIEN DUOC
+- Phien dich tin nhan realtime: CHUA THUC HIEN DUOC trong ban nop hien tai. Khong ghi nhan la chuc nang da hoan thanh va khong tinh diem cho phan nay.
+
 CHUC NANG DA XAY DUNG TRONG SOURCE BAN TICH HOP
 1. Dang ky qua email, xac minh OTP; tai khoan moi cho admin duyet va gan chi nhanh.
 2. Dang nhap bang ten dang nhap + mat khau + OTP email 6 so; gui lai OTP, dem han va cooldown; xoay refresh token, dang xuat thu hoi phien.
 3. Mot APK Flutter, ba giao dien: nhan vien/nguoi dung, quan ly chi nhanh va quan tri vien. Phan quyen admin / manager / employee. Dashboard va menu theo vai tro; backend kiem tra quyen. Pending/suspended vao trang trang thai rieng.
 4. CRUD nhan vien, chi nhanh, ca lam; tim kiem; phan ca. CRUD don dieu chinh khi pending, duyet/tu choi boi nguoi co quyen, giu dau vet gio goc. Du lieu co lich su bi gioi han xoa/sua de bao ve bang cong.
-5. Ba chuc nang nang cao:
+5. Ba chuc nang nang cao da chon (phien dich chua hoan thanh):
    a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera. API chung dang dung: lan dau mat khau + OTP, vao Cai dat thiet lap; lan sau nhap username, quet mat roi xac thuc OTP email. App 1.3.1 tuong thich payload API cu. Luong chi quet mat khong OTP co trong source, chi bat khi backend da deploy migration 006 va cong bo quickFaceLogin. Backend YuNet/SFace doi chieu 2D; chua kiem tra nguoi that.
    b. Chia se mot vi tri GPS hien tai, chon han 15/30/60/120 phut, dung som, xem theo phan quyen va mo ban do; khong theo doi nen.
-   c. Tin nhan realtime qua SSE co Bearer token; hoi thoai rieng tu, gioi han theo chi nhanh/admin. Dich tu dong tin den va xem truoc ban nhap Viet/Anh/Trung bang ML Kit tren Android; giu ban goc, tai mo hinh lan dau qua Internet. Khong can API key dich tra phi. Can deploy migration 005 va route chat len backend public truoc khi demo ket noi that.
+   c. Phien dich tin nhan realtime: CHUA THUC HIEN DUOC trong ban nop. Source co phan thu nghiem SSE va ML Kit Viet/Anh/Trung, nhung chua hoan thanh luong dich tin nhan tren app ket noi API public. Can tiep tuc tich hop, deploy va kiem thu; khong tinh la chuc nang da lam duoc.
    QR ca van la tien ich phu, KHONG tinh trong ba chuc nang nang cao da chon.
 6. Cham cong vao/ra ca, GPS trong ban kinh chi nhanh va cua so thoi gian; bao cao thang, xuat CSV, tach gio hieu luc va gio thiet bi goc.
 7. Tinh nang de xuat Nhip can bang: canh bao khoang nghi giua ca duoi 11 gio, ca tren 10 gio, thieu gio vao/ra. Chua khao sat thi truong de khang dinh tat ca app khac chua co.
@@ -30,11 +33,11 @@ CHUC NANG DA XAY DUNG TRONG SOURCE BAN TICH HOP
 
 DOI CHIEU YEU CAU VA DIEM DU KIEN
 - Nhom CRUD: muc toi da theo de 4.5 diem.
-- Ba chuc nang nang cao: muc toi da theo de 3.5 diem.
+- Ba chuc nang nang cao: muc toi da theo de 3.5 diem. Hien chi de nghi danh gia khuon mat va dinh vi theo ket qua demo; KHONG tinh diem phien dich vi chua thuc hien duoc. Diem thanh phan do giang vien quyet dinh.
 - Tinh nang moi de xuat: muc toi da 1 diem; phu thuoc giang vien chap nhan do moi.
 - Giao dien, de dung, chay lai: muc toi da 1 diem.
-- Tu du kien: 9/10 NEU da demo thanh cong CRUD, OTP, phan quyen va ca ba tinh nang nang cao tren moi truong that; khong phai diem da duoc xac nhan.
-- Chua du bang chung de tu cong nhan 9/10 khi chua co tai khoan active, chat public va video demo that. Khong tu dong gan diem toi da chi vi co source.
+- Tu du kien: khoang 7-8/10 NEU demo thanh cong CRUD, OTP, phan quyen, khuon mat, dinh vi va giao dien; khong tinh diem phien dich. Day la uoc tinh ca nhan, khong phai diem da duoc xac nhan.
+- Phien dich chua thuc hien duoc nen khong tu nhan da hoan thanh ca ba chuc nang nang cao. Diem thuc te phu thuoc ket qua demo va cach cham cua giang vien; khong tu dong tinh diem chi vi co source.
 
 BANG CHUNG VA GIOI HAN
 Xem docs/VERIFICATION.md cho so test/build va ket qua thuc te moi nhat.
