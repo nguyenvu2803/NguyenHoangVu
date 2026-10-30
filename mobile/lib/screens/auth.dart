@@ -107,7 +107,14 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> faceLogin() => run(() async {
     final saved = await widget.session.savedFaceAccount();
     if (!mounted) return;
-    if (saved != null) {
+    final typedUsername = username.text.trim().toLowerCase();
+    final faceUsername = typedUsername.isNotEmpty
+        ? typedUsername
+        : saved?['username'] as String? ?? '';
+    if (saved != null &&
+        saved['username'] == faceUsername &&
+        await widget.session.supportsQuickFaceLogin()) {
+      if (!mounted) return;
       final image = await captureFace(
         context,
         mirror: widget.session.preferences.mirrorCamera,
@@ -115,17 +122,16 @@ class _AuthScreenState extends State<AuthScreen> {
       if (image != null) await widget.session.unlockWithFace(image);
       return;
     }
-    if (!RegExp(
-      r'^[a-z0-9][a-z0-9_.]{2,31}$',
-    ).hasMatch(username.text.trim().toLowerCase())) {
+    if (!mounted) return;
+    if (!RegExp(r'^[a-z0-9][a-z0-9_.]{2,31}$').hasMatch(faceUsername)) {
       throw ApiException(
-        'Đăng nhập mật khẩu + OTP rồi vào Cài đặt để thiết lập khuôn mặt. Nếu đã đăng ký mặt kiểu cũ, nhập tên đăng nhập để tiếp tục.',
+        'Nhập tên đăng nhập đã đăng ký mặt. Nếu chưa có mẫu, đăng nhập mật khẩu + OTP rồi vào Cài đặt để thiết lập.',
       );
     }
     if (!await confirm(
       context,
       'Đăng nhập bằng khuôn mặt',
-      'Thiết bị chưa thiết lập đăng nhập nhanh. Ảnh sẽ được đối chiếu trên máy chủ rồi xác thực OTP. Để lần sau chỉ quét mặt, đăng nhập bằng mật khẩu và OTP rồi mở Cài đặt.',
+      'Ảnh được gửi qua HTTPS để đối chiếu với mẫu đã đăng ký, sau đó xác thực OTP email. Nếu chưa có mẫu, đăng nhập mật khẩu + OTP rồi mở Cài đặt để thiết lập khuôn mặt.',
     )) {
       return;
     }
@@ -137,7 +143,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (image == null) return;
     setChallenge(
       await widget.session.api.request('POST', '/auth/face-login', {
-        'username': username.text.trim().toLowerCase(),
+        'username': faceUsername,
         'imageBase64': image,
       }),
     );

@@ -26,6 +26,7 @@ class _SettingsPageState extends State<SettingsPage> {
   );
   Json face = {};
   bool busy = false, loading = true, localFace = false;
+  bool quickFaceLogin = false;
   String? error;
 
   @override
@@ -47,10 +48,12 @@ class _SettingsPageState extends State<SettingsPage> {
         await widget.session.api.request('GET', '/face/status'),
       );
       final saved = await widget.session.savedFaceAccount();
+      final quick = await widget.session.supportsQuickFaceLogin();
       if (mounted) {
         setState(() {
           face = status;
           localFace = saved?['username'] == widget.session.user?['username'];
+          quickFaceLogin = quick;
         });
       }
     } catch (e) {
@@ -86,19 +89,17 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> enroll() async {
     await run(() async {
-      final health = Json.from(
-        await widget.session.api.request('GET', '/health'),
-      );
-      if (health['features']?['quickFaceLogin'] != true) {
-        throw ApiException(
-          'API hiện tại chưa cập nhật đăng nhập khuôn mặt không OTP. Cần deploy backend mới trước khi thiết lập.',
-        );
-      }
+      final quick = await widget.session.supportsQuickFaceLogin();
       if (!mounted) return;
+      setState(() => quickFaceLogin = quick);
       if (!await confirm(
         context,
-        'Bật đăng nhập khuôn mặt trên thiết bị này?',
-        'Ảnh được gửi qua HTTPS để tạo mẫu khuôn mặt. Lần sau có thể quét mặt để đăng nhập, không cần mật khẩu hoặc OTP trên thiết bị đã thiết lập. Nhận diện ảnh 2D có thể bị giả mạo bằng ảnh, chưa có kiểm tra người thật. Chỉ bật nếu bạn chấp nhận giới hạn này. Chụp lại sẽ thay khóa thiết bị cũ.',
+        quick
+            ? 'Bật đăng nhập khuôn mặt trên thiết bị này?'
+            : 'Đăng ký khuôn mặt và OTP email?',
+        quick
+            ? 'Ảnh được gửi qua HTTPS để tạo mẫu khuôn mặt. Lần sau có thể quét mặt để đăng nhập, không cần mật khẩu hoặc OTP trên thiết bị đã thiết lập. Nhận diện ảnh 2D có thể bị giả mạo bằng ảnh, chưa có kiểm tra người thật. Chỉ bật nếu bạn chấp nhận giới hạn này. Chụp lại sẽ thay khóa thiết bị cũ.'
+            : 'Ảnh được gửi qua HTTPS để tạo mẫu khuôn mặt. Lần sau nhập tên đăng nhập, quét mặt rồi nhập OTP email. API hiện tại vẫn yêu cầu OTP. Nhận diện ảnh 2D có thể bị giả mạo bằng ảnh, chưa có kiểm tra người thật. Chụp lại sẽ thay mẫu khuôn mặt cũ.',
       )) {
         return;
       }
@@ -108,16 +109,15 @@ class _SettingsPageState extends State<SettingsPage> {
         mirror: widget.session.preferences.mirrorCamera,
       );
       if (image == null) return;
-      final result = Json.from(
-        await widget.session.api.request('POST', '/face/enroll', {
-          'imageBase64': image,
-          'enableQuickLogin': true,
-        }),
-      );
-      await widget.session.saveFaceDevice(result);
+      await widget.session.enrollFace(image, quickLogin: quick);
       await loadFace();
       if (mounted) {
-        toast(context, 'Đã thiết lập. Lần sau chọn Đăng nhập bằng khuôn mặt.');
+        toast(
+          context,
+          quick
+              ? 'Đã thiết lập. Lần sau chọn Đăng nhập bằng khuôn mặt.'
+              : 'Đã đăng ký mặt. Lần sau quét mặt rồi nhập OTP email.',
+        );
       }
     });
   }
@@ -252,7 +252,11 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 10),
                       Text(
-                        face['quickLoginEnabled'] == true && localFace
+                        !quickFaceLogin
+                            ? face['enrolled'] == true
+                                  ? 'Đã đăng ký mặt. Ở màn đăng nhập, nhập tên đăng nhập, quét mặt rồi nhập OTP email.'
+                                  : 'Đăng nhập mật khẩu + OTP rồi thiết lập khuôn mặt. API này dùng khuôn mặt + OTP email.'
+                            : face['quickLoginEnabled'] == true && localFace
                             ? 'Đã bật trên thiết bị này. Đăng xuất rồi chọn Đăng nhập bằng khuôn mặt để thử.'
                             : 'Đăng nhập mật khẩu và OTP trước. Sau đó thiết lập khuôn mặt để lần sau vào bằng camera.',
                       ),
@@ -284,7 +288,9 @@ class _SettingsPageState extends State<SettingsPage> {
                             if (!await confirm(
                               context,
                               'Xóa đăng nhập khuôn mặt?',
-                              'Mẫu khuôn mặt, khóa thiết bị và các phiên mở bằng khuôn mặt sẽ bị thu hồi. Dùng mật khẩu và OTP để vào lại.',
+                              quickFaceLogin
+                                  ? 'Mẫu khuôn mặt, khóa thiết bị và các phiên mở bằng khuôn mặt sẽ bị thu hồi. Dùng mật khẩu và OTP để vào lại.'
+                                  : 'Mẫu khuôn mặt sẽ bị xóa. Dùng mật khẩu và OTP để đăng nhập; có thể đăng ký mặt lại sau.',
                             )) {
                               return;
                             }

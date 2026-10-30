@@ -57,6 +57,26 @@ class Session extends ChangeNotifier {
 
   Future<void> forgetFaceDevice() => storage.delete(key: _faceStorageKey);
 
+  Future<bool> supportsQuickFaceLogin() async {
+    final health = Json.from(await api.request('GET', '/health'));
+    return health['features'] is Map &&
+        health['features']['quickFaceLogin'] == true;
+  }
+
+  Future<void> enrollFace(String image, {required bool quickLogin}) async {
+    final result = Json.from(
+      await api.request('POST', '/face/enroll', {
+        'imageBase64': image,
+        if (quickLogin) 'enableQuickLogin': true,
+      }),
+    );
+    if (quickLogin) {
+      await saveFaceDevice(result);
+    } else {
+      await forgetFaceDevice();
+    }
+  }
+
   Future<void> unlockWithFace(String image) async {
     final account = await savedFaceAccount();
     if (account == null) {

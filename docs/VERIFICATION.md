@@ -1,4 +1,24 @@
-# Kết quả mới — 30/10/2026 — bản 1.3.0+4
+# Kết quả mới — 30/10/2026 — bản 1.3.1+5
+
+Theo yêu cầu dùng lại API chung hôm trước, APK giữ `https://nguyen-hoai-nam-2380601398-api.onrender.com/v1` và hỗ trợ đăng ký mặt với payload cũ `{imageBase64}`. Không yêu cầu migration 006 để đăng ký mặt + OTP. Chỉ gửi `enableQuickLogin:true` khi máy chủ công bố hỗ trợ.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Flutter analyze | No issues found |
+| Flutter test | **40/40 đạt**; thêm hợp đồng đăng ký mặt cũ/mới, thay/xóa khóa thiết bị, hộp xác nhận mặt + OTP trên API cũ, khóa lưu cũ không gọi face-unlock trên server chưa hỗ trợ |
+| API chung | `/v1/health` HTTP 200, status ok, chưa có feature flags mới |
+| Route mặt cũ | `POST /v1/auth/face-login` với `{}` trả HTTP 422/VALIDATION_ERROR; endpoint tồn tại và kiểm tra dữ liệu. Không gửi ảnh, mật khẩu hoặc OTP trong phép kiểm tra này |
+| APK production | Build release **thành công**, 124.9 MB theo Flutter; versionName 1.3.1/versionCode 5, giữ API chung HTTPS và ba cờ demo/insecure đều false |
+| Cài Android | `adb install -r` **Success** trên AVD API33; package đã kiểm tra versionName 1.3.1/versionCode 5 |
+| Màn đăng nhập native | Đã thấy màn đăng nhập và nút khuôn mặt trong APK 1.3.1; ảnh `dist/android-legacy-face-login.png`. Lần khởi động lạnh trên máy ảo có timeout rồi giao diện mới hiện; không tính timeout thành đạt tức thì |
+| Phạm vi chưa nghiệm thu | Đăng ký/đối chiếu mặt người dùng thật trên API chung cần người dùng chụp ảnh, tài khoản active và OTP email. Không dùng fixture làm bằng chứng production |
+| Tính năng cần backend mới | Chỉ quét mặt không OTP, lưu hồ sơ mới và chat realtime chưa được triển khai lên API chung. Camera đối xứng, cỡ chữ, màu nền vẫn chạy trên APK |
+
+Log: `dist/legacy-face-analyze.log`, `dist/legacy-face-tests.log`, `dist/legacy-face-release-build.log`, `dist/legacy-face-release-install.log`. Hướng dẫn dùng API cũ và chế độ backend mới: `SETTINGS_FACE_LOGIN.md`.
+
+---
+
+## Kết quả lịch sử bản 1.3.0+4
 
 Bổ sung Cài đặt, đăng nhập khuôn mặt trên thiết bị đã thiết lập và camera đối xứng. Các kết quả dưới đây là kiểm thử source mới; API public vẫn chưa triển khai chức năng mới.
 

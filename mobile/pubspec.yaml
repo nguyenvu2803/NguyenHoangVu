@@ -1,7 +1,7 @@
 name: nguyen_hoang_vu
 description: NguyenHoangVu - Ung dung cham cong nhan vien.
 publish_to: none
-version: 1.3.0+4
+version: 1.3.1+5
 environment:
   sdk: '>=3.8.0 <4.0.0'
 dependencies:

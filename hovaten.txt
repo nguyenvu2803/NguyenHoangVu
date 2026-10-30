@@ -20,13 +20,13 @@ CHUC NANG DA XAY DUNG TRONG SOURCE BAN TICH HOP
 3. Mot APK Flutter, ba giao dien: nhan vien/nguoi dung, quan ly chi nhanh va quan tri vien. Phan quyen admin / manager / employee. Dashboard va menu theo vai tro; backend kiem tra quyen. Pending/suspended vao trang trang thai rieng.
 4. CRUD nhan vien, chi nhanh, ca lam; tim kiem; phan ca. CRUD don dieu chinh khi pending, duyet/tu choi boi nguoi co quyen, giu dau vet gio goc. Du lieu co lich su bi gioi han xoa/sua de bao ve bang cong.
 5. Ba chuc nang nang cao:
-   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera; lan dau mat khau + OTP, vao Cai dat thiet lap; lan sau thiet bi da dang ky chi quet mat, khong OTP. Backend YuNet/SFace doi chieu 2D va khoa thiet bi bao mat. Chua kiem tra nguoi that; can deploy migration 006 va backend moi.
+   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera. API chung dang dung: lan dau mat khau + OTP, vao Cai dat thiet lap; lan sau nhap username, quet mat roi xac thuc OTP email. App 1.3.1 tuong thich payload API cu. Luong chi quet mat khong OTP co trong source, chi bat khi backend da deploy migration 006 va cong bo quickFaceLogin. Backend YuNet/SFace doi chieu 2D; chua kiem tra nguoi that.
    b. Chia se mot vi tri GPS hien tai, chon han 15/30/60/120 phut, dung som, xem theo phan quyen va mo ban do; khong theo doi nen.
    c. Tin nhan realtime qua SSE co Bearer token; hoi thoai rieng tu, gioi han theo chi nhanh/admin. Dich tu dong tin den va xem truoc ban nhap Viet/Anh/Trung bang ML Kit tren Android; giu ban goc, tai mo hinh lan dau qua Internet. Khong can API key dich tra phi. Can deploy migration 005 va route chat len backend public truoc khi demo ket noi that.
    QR ca van la tien ich phu, KHONG tinh trong ba chuc nang nang cao da chon.
 6. Cham cong vao/ra ca, GPS trong ban kinh chi nhanh va cua so thoi gian; bao cao thang, xuat CSV, tach gio hieu luc va gio thiet bi goc.
 7. Tinh nang de xuat Nhip can bang: canh bao khoang nghi giua ca duoi 11 gio, ca tren 10 gio, thieu gio vao/ra. Chua khao sat thi truong de khang dinh tat ca app khac chua co.
-8. Giao dien tieng Viet, font Manrope/Lora dong goi, bo cuc mobile. Cai dat doi co chu 85/100/115/130%, bon mau nen, camera doi xung; cap nhat ho ten, dien thoai, gioi thieu qua API. Tuy chon giao dien luu tren thiet bi. Ban 1.3.0+4.
+8. Giao dien tieng Viet, font Manrope/Lora dong goi, bo cuc mobile. Cai dat doi co chu 85/100/115/130%, bon mau nen, camera doi xung; cap nhat ho ten, dien thoai, gioi thieu qua API moi khi duoc deploy. Tuy chon giao dien luu tren thiet bi. Ban 1.3.1+5.
 
 DOI CHIEU YEU CAU VA DIEM DU KIEN
 - Nhom CRUD: muc toi da theo de 4.5 diem.
@@ -45,4 +45,4 @@ API dang chay la backend chung; sua source cuc bo chua duoc deploy len dich vu c
 Khong ghi nhan Google OAuth, SMS, NFC, Barcode, Face ID he dieu han la tinh nang da nghiem thu cua ban production nay.
 Chua co link YouTube. Can cap nhat link video that truoc khi nop.
 
-Ban cap nhat 1.3.0+4: xem docs/SETTINGS_FACE_LOGIN.md. API can health features.quickFaceLogin=true va selfProfile=true. Khong coi test tach biet la bang chung da deploy.
+Ban cap nhat 1.3.1+5: xem docs/SETTINGS_FACE_LOGIN.md. Giu API chung hom truoc, cho phep thiet lap mat va dang nhap mat + OTP. Chi luong khong OTP va luu ho so moi can backend cap nhat. Khong coi test tach biet la bang chung da deploy hoac da quet mat nguoi dung that.

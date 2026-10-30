@@ -9,7 +9,12 @@ const shiftId = '63bf08ee-8358-45a0-b28d-75ef02d179ac';
 
 class SharedBackend {
   final String role, status;
-  SharedBackend({this.role = 'employee', this.status = 'active'});
+  final bool quickFaceLogin;
+  SharedBackend({
+    this.role = 'employee',
+    this.status = 'active',
+    this.quickFaceLogin = true,
+  });
   final calls = <Json>[];
   Json profile = {};
   Json get user => {
@@ -83,7 +88,12 @@ class SharedBackend {
       'query': request.url.queryParameters,
     });
     dynamic result;
-    if (path == '/auth/login' ||
+    if (path == '/health') {
+      result = {
+        'status': 'ok',
+        if (quickFaceLogin) 'features': {'quickFaceLogin': true},
+      };
+    } else if (path == '/auth/login' ||
         path == '/auth/register' ||
         path == '/auth/resend-otp') {
       result = {
@@ -115,7 +125,11 @@ class SharedBackend {
         'attendance': [],
       };
     } else if (path == '/face/status') {
-      result = {'enrolled': false, 'enrolledAt': null};
+      result = {
+        'enrolled': false,
+        'enrolledAt': null,
+        if (quickFaceLogin) 'canEnrollQuickLogin': true,
+      };
     } else if (path == '/reports/monthly') {
       result = report;
     } else if (path == '/employees') {

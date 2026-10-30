@@ -11,6 +11,8 @@ import 'package:nguyen_hoang_vu/core/preferences.dart';
 import 'package:nguyen_hoang_vu/core/session.dart';
 import 'package:nguyen_hoang_vu/main.dart';
 import 'package:nguyen_hoang_vu/screens/face_camera.dart';
+import 'package:nguyen_hoang_vu/screens/auth.dart';
+import 'package:nguyen_hoang_vu/screens/settings.dart';
 import 'support/shared_backend.dart';
 
 void main() {
@@ -139,6 +141,100 @@ void main() {
       expect(small.height, 768);
     },
   );
+
+  for (final quick in [false, true]) {
+    test('Face enrollment uses compatible payload, quick=$quick', () async {
+      var enrolled = false;
+      final session = Session(
+        Api(
+          client: MockClient((r) async {
+            if (r.url.path.endsWith('/health')) {
+              return http.Response(
+                jsonEncode({
+                  'data': {
+                    'status': 'ok',
+                    if (quick) 'features': {'quickFaceLogin': true},
+                  },
+                }),
+                200,
+              );
+            }
+            expect(r.method, 'POST');
+            expect(r.url.path, '/v1/face/enroll');
+            expect(jsonDecode(r.body), {
+              'imageBase64': 'camera-photo',
+              if (quick) 'enableQuickLogin': true,
+            });
+            enrolled = true;
+            return http.Response(
+              jsonEncode({
+                'data': {
+                  'enrolled': true,
+                  if (quick) 'deviceKey': 'new-device-secret',
+                },
+              }),
+              201,
+            );
+          }),
+        ),
+      )..user = {'id': 'u', 'username': 'hoangvu'};
+      await session.saveFaceDevice({'deviceKey': 'old-device-secret'});
+      final supported = await session.supportsQuickFaceLogin();
+      expect(supported, quick);
+      await session.enrollFace('camera-photo', quickLogin: supported);
+      expect(enrolled, true);
+      final saved = await session.savedFaceAccount();
+      if (quick) {
+        expect(saved?['deviceKey'], 'new-device-secret');
+      } else {
+        expect(saved, isNull);
+      }
+    });
+  }
+
+  testWidgets('Legacy API Settings offers face enrollment with OTP consent', (
+    tester,
+  ) async {
+    final be = SharedBackend(quickFaceLogin: false);
+    final session = Session(be.api)..user = be.user;
+    await tester.pumpWidget(MaterialApp(home: SettingsPage(session: session)));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(
+      find.text('Thiết lập khuôn mặt'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(find.text('Thiết lập khuôn mặt'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thiết lập khuôn mặt'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đăng ký khuôn mặt và OTP email?'), findsOneWidget);
+    expect(
+      find.textContaining('API hiện tại vẫn yêu cầu OTP.'),
+      findsOneWidget,
+    );
+    expect(be.calls.where((c) => c['path'] == '/face/enroll'), isEmpty);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Saved quick key on legacy server falls back to face and OTP', (
+    tester,
+  ) async {
+    final be = SharedBackend(quickFaceLogin: false);
+    final session = Session(be.api)..user = be.user;
+    await session.saveFaceDevice({'deviceKey': 'previous-device-secret'});
+    session.user = null;
+    await tester.pumpWidget(MaterialApp(home: AuthScreen(session: session)));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Đăng nhập bằng khuôn mặt'));
+    await tester.tap(find.text('Đăng nhập bằng khuôn mặt'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('sau đó xác thực OTP email.'), findsOneWidget);
+    expect(be.calls.where((c) => c['path'] == '/auth/face-unlock'), isEmpty);
+    expect(be.calls.where((c) => c['path'] == '/health'), hasLength(1));
+    await tester.pumpWidget(const SizedBox());
+  });
 
   test('OTP clock uses server Date, not incorrect device wall clock', () async {
     final api = Api(

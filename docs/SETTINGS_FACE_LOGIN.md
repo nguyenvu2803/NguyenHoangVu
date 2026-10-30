@@ -1,6 +1,19 @@
-# Cài đặt và đăng nhập khuôn mặt — 1.3.0+4
+# Cài đặt và đăng nhập khuôn mặt — 1.3.1+5
 
-## Dùng trên Android
+## API đang dùng: khuôn mặt + OTP
+
+APK tiếp tục dùng `https://nguyen-hoai-nam-2380601398-api.onrender.com/v1`, theo yêu cầu dùng lại API chung. Health chưa công bố `features.quickFaceLogin`; app không chặn đăng ký mặt vì thiếu tính năng này.
+
+1. Đăng nhập bằng mật khẩu và OTP email với tài khoản active.
+2. Cài đặt → Thiết lập khuôn mặt → đọc xác nhận **Đăng ký khuôn mặt và OTP email?** → chụp → Dùng ảnh này. App gửi `{imageBase64}` qua HTTPS, không gửi trường mới `enableQuickLogin` đến API cũ.
+3. Đăng xuất. Nhập tên đăng nhập đã đăng ký mặt → Đăng nhập bằng khuôn mặt → chụp → Dùng ảnh này.
+4. Máy chủ đối chiếu mặt rồi gửi OTP email. Nhập OTP để đăng nhập; không cần mật khẩu ở bước này.
+
+Camera vẫn đối xứng mặc định, có xem lại ảnh trước khi gửi. Chỉ tự động dùng `/auth/face-unlock` khi máy chủ công bố hỗ trợ và thiết bị có khóa đã lưu cho đúng tài khoản. Khóa cũ không khiến app gọi endpoint chưa được triển khai.
+
+API cũ chưa hỗ trợ lưu hồ sơ mới và chat realtime của bản tích hợp. Không coi bản vá tương thích khuôn mặt là đã triển khai các chức năng đó hoặc đã bỏ OTP.
+
+## Khi backend đã cập nhật: chỉ quét mặt trên thiết bị đã thiết lập
 
 1. Đăng nhập bằng tên đăng nhập, mật khẩu và OTP email. Tài khoản phải được kích hoạt.
 2. Mở biểu tượng bánh răng **Cài đặt**, hoặc **Hồ sơ → Mở Cài đặt**.
