@@ -77,6 +77,24 @@ class Session extends ChangeNotifier {
     }
   }
 
+  Future<Json?> loginWithFace(String username, String image) async {
+    final result = Json.from(
+      await api.request('POST', '/auth/face-login', {
+        'username': username,
+        'imageBase64': image,
+      }),
+    );
+    if (result['accessToken'] is String &&
+        (result['accessToken'] as String).isNotEmpty &&
+        result['refreshToken'] is String &&
+        (result['refreshToken'] as String).isNotEmpty &&
+        result['user'] is Map) {
+      await accept(result);
+      return null;
+    }
+    return result;
+  }
+
   Future<void> unlockWithFace(String image) async {
     final account = await savedFaceAccount();
     if (account == null) {

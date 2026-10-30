@@ -70,6 +70,17 @@ class _AuthScreenState extends State<AuthScreen> {
 
   void setChallenge(dynamic value) {
     if (!mounted) return;
+    if (value is! Map ||
+        value['challengeId'] is! String ||
+        (value['challengeId'] as String).isEmpty ||
+        value['maskedEmail'] is! String ||
+        (value['maskedEmail'] as String).isEmpty ||
+        value['expiresAt'] is! String ||
+        DateTime.tryParse(value['expiresAt']) == null) {
+      throw ApiException(
+        'Máy chủ chưa trả thông tin OTP hợp lệ. Quay lại đăng nhập và thử lại.',
+      );
+    }
     setState(() {
       challenge = Json.from(value);
       resendAt = widget.session.api.serverNow.add(
@@ -131,7 +142,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!await confirm(
       context,
       'Đăng nhập bằng khuôn mặt',
-      'Ảnh được gửi qua HTTPS để đối chiếu với mẫu đã đăng ký, sau đó xác thực OTP email. Nếu chưa có mẫu, đăng nhập mật khẩu + OTP rồi mở Cài đặt để thiết lập khuôn mặt.',
+      'Ảnh được gửi qua HTTPS để đối chiếu với mẫu đã đăng ký. Máy chủ có thể cho đăng nhập trực tiếp hoặc yêu cầu OTP email. Nếu chưa có mẫu, đăng nhập mật khẩu + OTP rồi mở Cài đặt để thiết lập khuôn mặt.',
     )) {
       return;
     }
@@ -141,12 +152,8 @@ class _AuthScreenState extends State<AuthScreen> {
       mirror: widget.session.preferences.mirrorCamera,
     );
     if (image == null) return;
-    setChallenge(
-      await widget.session.api.request('POST', '/auth/face-login', {
-        'username': faceUsername,
-        'imageBase64': image,
-      }),
-    );
+    final result = await widget.session.loginWithFace(faceUsername, image);
+    if (result != null) setChallenge(result);
   });
 
   Widget field(

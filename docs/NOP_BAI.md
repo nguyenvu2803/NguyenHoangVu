@@ -15,7 +15,7 @@ Frontend/backend nằm ở hai thư mục cùng repository cá nhân; backend up
 
 - Source GitHub public mở được, bao gồm pubspec.lock, mã Flutter và Node package-lock/migrations; không có secret.
 - Cài APK production, DEMO_MODE/SHOW_DEMO/ALLOW_INSECURE_DEV đều false; truy cập API Internet không qua máy lập trình. Đã thử đăng ký và OTP email thật thành công; tài khoản cá nhân hiện chờ admin duyệt.
-- API chung hiện dùng đăng ký mặt và đăng nhập mặt + OTP. Chỉ chat realtime, mở khóa mặt không OTP và lưu hồ sơ mới cần chủ API deploy migration 005–006, health công khai có `features.realtimeChat=true`, `quickFaceLogin=true`, `selfProfile=true`. Xem SETTINGS_FACE_LOGIN.md.
+- API chung hiện trả phiên trực tiếp khi `/auth/face-login` khớp mặt; APK 1.3.2 nhận đúng phiên, vẫn hỗ trợ server trả OTP. Chat realtime, mở khóa theo khóa thiết bị và lưu hồ sơ mới cần chủ API deploy migration 005–006 với feature flags tương ứng. Xem SETTINGS_FACE_LOGIN.md.
 - Có tài khoản cá nhân active và tài khoản quản trị test hợp lệ để ghi hình đủ quyền/CRUD; OTP email thật đến hộp thư.
 - Quay đủ khuôn mặt, chia sẻ vị trí, dịch tin nhắn realtime và Nhịp cân bằng, ghi rõ giới hạn máy ảo nếu có. Không dùng screenshot fixture thay video tích hợp thật.
 - `hovaten.txt` ghi đúng Nguyễn Hoàng Vũ — 2380602586, chức năng, điểm dự kiến có điều kiện, link video thật.
@@ -25,4 +25,4 @@ Trạng thái và giới hạn kiểm thử: `VERIFICATION.md`. Gói chuẩn b�
 
 Bản 1.3.0+4 bổ sung thiết lập khuôn mặt sau mật khẩu/OTP, quét mặt không OTP trên thiết bị đã thiết lập, camera đối xứng, cỡ chữ, màu nền và sửa hồ sơ. Cần deploy backend mới; không xác nhận production chỉ từ APK.
 
-Bản hiện tại **1.3.1+5** giữ API chung hôm trước và hỗ trợ đăng ký mặt với payload cũ. Đăng nhập bằng username + mặt + OTP email hoạt động theo hợp đồng API cũ; chỉ bật mở khóa không OTP khi máy chủ công bố hỗ trợ. Cần người dùng chụp mặt thật để nghiệm thu nhận diện trên tài khoản cá nhân.
+Bản hiện tại **1.3.2+6** giữ API chung và hỗ trợ đăng ký mặt với payload cũ. Đăng nhập username + mặt nhận được cả phiên trực tiếp lẫn challenge OTP; sửa lỗi mở form email `null`/hạn `0:00` khi backend trả token. Cần người dùng chụp mặt thật để nghiệm thu lại trên tài khoản cá nhân. Phiên dịch chưa thực hiện được; tự chấm trong `hovaten.txt`: **7.0/10**, không tính điểm phiên dịch.

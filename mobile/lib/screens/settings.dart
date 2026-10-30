@@ -96,10 +96,10 @@ class _SettingsPageState extends State<SettingsPage> {
         context,
         quick
             ? 'Bật đăng nhập khuôn mặt trên thiết bị này?'
-            : 'Đăng ký khuôn mặt và OTP email?',
+            : 'Đăng ký khuôn mặt?',
         quick
             ? 'Ảnh được gửi qua HTTPS để tạo mẫu khuôn mặt. Lần sau có thể quét mặt để đăng nhập, không cần mật khẩu hoặc OTP trên thiết bị đã thiết lập. Nhận diện ảnh 2D có thể bị giả mạo bằng ảnh, chưa có kiểm tra người thật. Chỉ bật nếu bạn chấp nhận giới hạn này. Chụp lại sẽ thay khóa thiết bị cũ.'
-            : 'Ảnh được gửi qua HTTPS để tạo mẫu khuôn mặt. Lần sau nhập tên đăng nhập, quét mặt rồi nhập OTP email. API hiện tại vẫn yêu cầu OTP. Nhận diện ảnh 2D có thể bị giả mạo bằng ảnh, chưa có kiểm tra người thật. Chụp lại sẽ thay mẫu khuôn mặt cũ.',
+            : 'Ảnh được gửi qua HTTPS để tạo mẫu khuôn mặt. Lần sau nhập tên đăng nhập và quét mặt; máy chủ có thể cho đăng nhập trực tiếp hoặc yêu cầu OTP email. Nhận diện ảnh 2D có thể bị giả mạo bằng ảnh, chưa có kiểm tra người thật. Chụp lại sẽ thay mẫu khuôn mặt cũ.',
       )) {
         return;
       }
@@ -116,7 +116,7 @@ class _SettingsPageState extends State<SettingsPage> {
           context,
           quick
               ? 'Đã thiết lập. Lần sau chọn Đăng nhập bằng khuôn mặt.'
-              : 'Đã đăng ký mặt. Lần sau quét mặt rồi nhập OTP email.',
+              : 'Đã đăng ký mặt. Lần sau nhập tên đăng nhập và quét mặt.',
         );
       }
     });
@@ -254,8 +254,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       Text(
                         !quickFaceLogin
                             ? face['enrolled'] == true
-                                  ? 'Đã đăng ký mặt. Ở màn đăng nhập, nhập tên đăng nhập, quét mặt rồi nhập OTP email.'
-                                  : 'Đăng nhập mật khẩu + OTP rồi thiết lập khuôn mặt. API này dùng khuôn mặt + OTP email.'
+                                  ? 'Đã đăng ký mặt. Ở màn đăng nhập, nhập tên đăng nhập và quét mặt. Chỉ nhập OTP nếu máy chủ yêu cầu.'
+                                  : 'Đăng nhập mật khẩu + OTP rồi thiết lập khuôn mặt. Lần sau nhập tên đăng nhập và quét mặt.'
                             : face['quickLoginEnabled'] == true && localFace
                             ? 'Đã bật trên thiết bị này. Đăng xuất rồi chọn Đăng nhập bằng khuôn mặt để thử.'
                             : 'Đăng nhập mật khẩu và OTP trước. Sau đó thiết lập khuôn mặt để lần sau vào bằng camera.',

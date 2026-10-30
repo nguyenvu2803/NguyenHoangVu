@@ -1,17 +1,25 @@
-# Cài đặt và đăng nhập khuôn mặt — 1.3.1+5
+# Cài đặt và đăng nhập khuôn mặt — 1.3.2+6
 
-## API đang dùng: khuôn mặt + OTP
+## Sửa lỗi phản hồi đăng nhập mặt
+
+Backend upstream hiện trả `accessToken`, `refreshToken`, `user` trực tiếp khi `/auth/face-login` đối chiếu mặt thành công. Bản 1.3.1 luôn đọc phản hồi đó như challenge OTP, gây màn email `null`, thời hạn `0:00` và lỗi validation khi xác nhận.
+
+Bản 1.3.2 nhận phiên/token thì gọi `Session.accept` và vào app; nếu máy chủ trả challenge OTP hợp lệ thì mới mở form OTP. Đăng nhập mật khẩu/đăng ký vẫn yêu cầu OTP theo hợp đồng hiện có. Challenge thiếu ID/email/hạn không được hiển thị như đã gửi mã. Hộp xác nhận thiết lập/đăng nhập mặt mô tả cả hai kiểu phản hồi.
+
+Chức năng `quickFaceLogin`/`face-unlock` theo khóa thiết bị là luồng riêng; API không cần công bố flag này để client chấp nhận phiên hợp lệ trả từ `/auth/face-login`.
+
+## Tương thích API trả khuôn mặt + OTP
 
 APK tiếp tục dùng `https://nguyen-hoai-nam-2380601398-api.onrender.com/v1`, theo yêu cầu dùng lại API chung. Health chưa công bố `features.quickFaceLogin`; app không chặn đăng ký mặt vì thiếu tính năng này.
 
 1. Đăng nhập bằng mật khẩu và OTP email với tài khoản active.
-2. Cài đặt → Thiết lập khuôn mặt → đọc xác nhận **Đăng ký khuôn mặt và OTP email?** → chụp → Dùng ảnh này. App gửi `{imageBase64}` qua HTTPS, không gửi trường mới `enableQuickLogin` đến API cũ.
+2. Cài đặt → Thiết lập khuôn mặt → đọc xác nhận **Đăng ký khuôn mặt?** → chụp → Dùng ảnh này. App gửi `{imageBase64}` qua HTTPS, không gửi trường mới `enableQuickLogin` đến API cũ.
 3. Đăng xuất. Nhập tên đăng nhập đã đăng ký mặt → Đăng nhập bằng khuôn mặt → chụp → Dùng ảnh này.
-4. Máy chủ đối chiếu mặt rồi gửi OTP email. Nhập OTP để đăng nhập; không cần mật khẩu ở bước này.
+4. Máy chủ đối chiếu mặt. Nếu trả phiên đăng nhập thì app vào dashboard; chỉ nhập OTP nếu máy chủ trả challenge và app mở form OTP hợp lệ. Không cần mật khẩu ở bước này.
 
 Camera vẫn đối xứng mặc định, có xem lại ảnh trước khi gửi. Chỉ tự động dùng `/auth/face-unlock` khi máy chủ công bố hỗ trợ và thiết bị có khóa đã lưu cho đúng tài khoản. Khóa cũ không khiến app gọi endpoint chưa được triển khai.
 
-API cũ chưa hỗ trợ lưu hồ sơ mới và chat realtime của bản tích hợp. Không coi bản vá tương thích khuôn mặt là đã triển khai các chức năng đó hoặc đã bỏ OTP.
+API chung chưa hỗ trợ lưu hồ sơ mới và chat realtime của bản tích hợp. Không coi bản vá tương thích khuôn mặt là đã triển khai các chức năng đó. Luồng OTP dưới đây áp dụng khi server trả challenge, không áp dụng khi server đã trả phiên đăng nhập trực tiếp.
 
 ## Khi backend đã cập nhật: chỉ quét mặt trên thiết bị đã thiết lập
 

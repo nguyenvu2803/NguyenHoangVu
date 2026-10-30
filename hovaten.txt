@@ -23,20 +23,25 @@ CHUC NANG DA XAY DUNG TRONG SOURCE BAN TICH HOP
 3. Mot APK Flutter, ba giao dien: nhan vien/nguoi dung, quan ly chi nhanh va quan tri vien. Phan quyen admin / manager / employee. Dashboard va menu theo vai tro; backend kiem tra quyen. Pending/suspended vao trang trang thai rieng.
 4. CRUD nhan vien, chi nhanh, ca lam; tim kiem; phan ca. CRUD don dieu chinh khi pending, duyet/tu choi boi nguoi co quyen, giu dau vet gio goc. Du lieu co lich su bi gioi han xoa/sua de bao ve bang cong.
 5. Ba chuc nang nang cao da chon (phien dich chua hoan thanh):
-   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera. API chung dang dung: lan dau mat khau + OTP, vao Cai dat thiet lap; lan sau nhap username, quet mat roi xac thuc OTP email. App 1.3.1 tuong thich payload API cu. Luong chi quet mat khong OTP co trong source, chi bat khi backend da deploy migration 006 va cong bo quickFaceLogin. Backend YuNet/SFace doi chieu 2D; chua kiem tra nguoi that.
+   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera. Lan dau mat khau + OTP, vao Cai dat thiet lap. Ban 1.3.2 xu ly ca hai phan hoi cua /auth/face-login: nhan token thi vao app truc tiep; nhan challenge hop le thi xac thuc OTP email. Backend chung hien co source tra token sau khi khop mat; da sua loi app mo nham man OTP null. Can nguoi dung quet lai de nghiem thu end-to-end. Luong khoa thiet bi /auth/face-unlock rieng chi bat khi backend cong bo quickFaceLogin. Backend YuNet/SFace doi chieu 2D; chua kiem tra nguoi that.
    b. Chia se mot vi tri GPS hien tai, chon han 15/30/60/120 phut, dung som, xem theo phan quyen va mo ban do; khong theo doi nen.
    c. Phien dich tin nhan realtime: CHUA THUC HIEN DUOC trong ban nop. Source co phan thu nghiem SSE va ML Kit Viet/Anh/Trung, nhung chua hoan thanh luong dich tin nhan tren app ket noi API public. Can tiep tuc tich hop, deploy va kiem thu; khong tinh la chuc nang da lam duoc.
    QR ca van la tien ich phu, KHONG tinh trong ba chuc nang nang cao da chon.
 6. Cham cong vao/ra ca, GPS trong ban kinh chi nhanh va cua so thoi gian; bao cao thang, xuat CSV, tach gio hieu luc va gio thiet bi goc.
 7. Tinh nang de xuat Nhip can bang: canh bao khoang nghi giua ca duoi 11 gio, ca tren 10 gio, thieu gio vao/ra. Chua khao sat thi truong de khang dinh tat ca app khac chua co.
-8. Giao dien tieng Viet, font Manrope/Lora dong goi, bo cuc mobile. Cai dat doi co chu 85/100/115/130%, bon mau nen, camera doi xung; cap nhat ho ten, dien thoai, gioi thieu qua API moi khi duoc deploy. Tuy chon giao dien luu tren thiet bi. Ban 1.3.1+5.
+8. Giao dien tieng Viet, font Manrope/Lora dong goi, bo cuc mobile. Cai dat doi co chu 85/100/115/130%, bon mau nen, camera doi xung; cap nhat ho ten, dien thoai, gioi thieu qua API moi khi duoc deploy. Tuy chon giao dien luu tren thiet bi. Ban 1.3.2+6.
 
 DOI CHIEU YEU CAU VA DIEM DU KIEN
 - Nhom CRUD: muc toi da theo de 4.5 diem.
 - Ba chuc nang nang cao: muc toi da theo de 3.5 diem. Hien chi de nghi danh gia khuon mat va dinh vi theo ket qua demo; KHONG tinh diem phien dich vi chua thuc hien duoc. Diem thanh phan do giang vien quyet dinh.
 - Tinh nang moi de xuat: muc toi da 1 diem; phu thuoc giang vien chap nhan do moi.
 - Giao dien, de dung, chay lai: muc toi da 1 diem.
-- Tu du kien: khoang 7-8/10 NEU demo thanh cong CRUD, OTP, phan quyen, khuon mat, dinh vi va giao dien; khong tinh diem phien dich. Day la uoc tinh ca nhan, khong phai diem da duoc xac nhan.
+- TU CHAM TAI THOI DIEM NOP: 7.0/10, chi la tu danh gia ca nhan; giang vien quyet dinh diem thuc te.
+- CRUD: tu cham 4.0/4.5. Co quan ly nhan vien, chi nhanh, ca lam va don dieu chinh; chua nghiem thu day du CRUD tren ca ba vai tro o API public.
+- Chuc nang nang cao: tu cham 1.5/3.5. Dinh vi 1.0 diem (demo GPS may ao, chua thay the GPS dien thoai that); khuon mat 0.5 diem (co thiet lap va source nhan dien, loi phan hoi da sua nhung can quet lai de nghiem thu); phien dich 0 diem (chua thuc hien duoc). Cach chia nay la uoc tinh tu danh gia, khong phai barem thanh phan chinh thuc.
+- Tinh nang moi de xuat: tu cham 0.5/1.0 cho Nhip can bang; chua xac nhan do moi tren thi truong.
+- Giao dien, de dung, chay lai: tu cham 1.0/1.0 cho Flutter mobile, tuy chinh giao dien, APK va source chay lai.
+- Tong tu cham: 4.0 + 1.5 + 0.5 + 1.0 = 7.0/10. Khong tinh diem phien dich va khong coi loi dang nhap mat la da nghiem thu thanh cong.
 - Phien dich chua thuc hien duoc nen khong tu nhan da hoan thanh ca ba chuc nang nang cao. Diem thuc te phu thuoc ket qua demo va cach cham cua giang vien; khong tu dong tinh diem chi vi co source.
 
 BANG CHUNG VA GIOI HAN
@@ -48,4 +53,4 @@ API dang chay la backend chung; sua source cuc bo chua duoc deploy len dich vu c
 Khong ghi nhan Google OAuth, SMS, NFC, Barcode, Face ID he dieu han la tinh nang da nghiem thu cua ban production nay.
 Chua co link YouTube. Can cap nhat link video that truoc khi nop.
 
-Ban cap nhat 1.3.1+5: xem docs/SETTINGS_FACE_LOGIN.md. Giu API chung hom truoc, cho phep thiet lap mat va dang nhap mat + OTP. Chi luong khong OTP va luu ho so moi can backend cap nhat. Khong coi test tach biet la bang chung da deploy hoac da quet mat nguoi dung that.
+Ban cap nhat 1.3.2+6: xem docs/SETTINGS_FACE_LOGIN.md. Giu API chung hom truoc, ho tro face-login tra token truc tiep hoac challenge OTP. Khong tao man OTP neu phan hoi thieu thong tin challenge. Luu ho so moi va face-unlock theo khoa thiet bi can backend tuong ung. Khong coi test tach biet la bang chung da quet mat nguoi dung that.

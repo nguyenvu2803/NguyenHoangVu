@@ -1,4 +1,23 @@
-# Kết quả mới — 30/10/2026 — bản 1.3.1+5
+# Kết quả mới — 30/10/2026 — bản 1.3.2+6
+
+Lỗi quan sát được: app mở form OTP với email `null`, hạn `0:00` sau đăng nhập mặt. Source upstream hiện trả `accessToken`, `refreshToken`, `user` trực tiếp từ `/auth/face-login`; app 1.3.1 luôn coi phản hồi là challenge. Bản 1.3.2 chấp nhận phiên trực tiếp, chỉ mở form khi có challenge OTP hợp lệ. Không cần thay mẫu mặt để sửa lỗi xử lý phản hồi này.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Flutter analyze | **No issues found** |
+| Flutter test | **43/43 đạt**, gồm nhận phiên trực tiếp, nhận challenge OTP và chặn form OTP thiếu dữ liệu; HTTP fixture, không thay nghiệm thu production |
+| API | Giữ URL HTTPS chung; đăng nhập mật khẩu/đăng ký vẫn theo luồng OTP. Không cần feature flag `quickFaceLogin` để nhận phiên từ `/auth/face-login` |
+| APK release và cài đặt | Build thành công, 124.9 MB; `adb install -r` **Success**, xác nhận versionName **1.3.2** / versionCode **6** trên emulator-5554 |
+| Khởi động Android | `am start -W` **Status: ok**, COLD, TotalTime 3336 ms |
+| Chưa nghiệm thu | Cần người dùng quét mặt thật lại sau cài APK để xác nhận dashboard và vai trò trên API public. Không công bố đã thành công chỉ từ test fixture |
+
+Log: `dist/face-session-response-analyze.log`, `dist/face-session-response-tests.log`, `dist/face-session-response-release-build.log`. Screenshot lỗi chứa thông tin xác thực được giữ riêng, không đưa vào Git/gói nộp.
+
+Phiên dịch vẫn **chưa thực hiện được** trong bản nộp. `hovaten.txt` tự chấm **7.0/10**, không tính điểm phiên dịch.
+
+---
+
+## Kết quả lịch sử bản 1.3.1+5
 
 Theo yêu cầu dùng lại API chung hôm trước, APK giữ `https://nguyen-hoai-nam-2380601398-api.onrender.com/v1` và hỗ trợ đăng ký mặt với payload cũ `{imageBase64}`. Không yêu cầu migration 006 để đăng ký mặt + OTP. Chỉ gửi `enableQuickLogin:true` khi máy chủ công bố hỗ trợ.
 

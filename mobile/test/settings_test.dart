@@ -192,7 +192,83 @@ void main() {
     });
   }
 
-  testWidgets('Legacy API Settings offers face enrollment with OTP consent', (
+  for (final directSession in [false, true]) {
+    test('Face login handles session or OTP, direct=$directSession', () async {
+      final user = SharedBackend().user;
+      final otp = {
+        'challengeId': 'face-challenge',
+        'maskedEmail': 't***@example.org',
+        'expiresAt': '2030-01-01T00:10:00Z',
+        'retryAfterSeconds': 60,
+      };
+      final calls = <String>[];
+      final session = Session(
+        Api(
+          client: MockClient((r) async {
+            calls.add(r.url.path);
+            expect(r.url.path, '/v1/auth/face-login');
+            expect(jsonDecode(r.body), {
+              'username': 'hoangvu',
+              'imageBase64': 'camera-photo',
+            });
+            return http.Response(
+              jsonEncode({
+                'data': directSession
+                    ? {
+                        'accessToken': 'face-access',
+                        'refreshToken': 'face-refresh',
+                        'user': user,
+                      }
+                    : otp,
+              }),
+              200,
+              headers: {'content-type': 'application/json; charset=utf-8'},
+            );
+          }),
+        ),
+      );
+      final challenge = await session.loginWithFace('hoangvu', 'camera-photo');
+      if (directSession) {
+        expect(challenge, isNull);
+        expect(session.user?['id'], user['id']);
+        expect(session.api.accessToken, 'face-access');
+        expect(session.api.refreshToken, 'face-refresh');
+      } else {
+        expect(challenge, otp);
+        expect(session.user, isNull);
+        expect(session.api.accessToken, isNull);
+      }
+      expect(calls, ['/v1/auth/face-login']);
+    });
+  }
+
+  testWidgets('Malformed OTP response never opens null-email OTP form', (
+    tester,
+  ) async {
+    final session = Session(
+      Api(
+        client: MockClient(
+          (r) async => http.Response('{"data":{"unexpected":true}}', 200),
+        ),
+      ),
+    );
+    await tester.pumpWidget(MaterialApp(home: AuthScreen(session: session)));
+    await tester.enterText(find.byType(TextFormField).at(0), 'hoangvu');
+    await tester.enterText(find.byType(TextFormField).at(1), 'test-password');
+    await tester.ensureVisible(find.text('Tiếp tục với OTP'));
+    await tester.tap(find.text('Tiếp tục với OTP'));
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('Máy chủ chưa trả thông tin OTP hợp lệ.'),
+      findsOneWidget,
+    );
+    expect(find.text('Kiểm tra email.'), findsNothing);
+    expect(find.textContaining('đến null'), findsNothing);
+    expect(session.user, isNull);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Legacy API Settings offers compatible face enrollment consent', (
     tester,
   ) async {
     final be = SharedBackend(quickFaceLogin: false);
@@ -209,9 +285,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Thiết lập khuôn mặt'));
     await tester.pumpAndSettle();
-    expect(find.text('Đăng ký khuôn mặt và OTP email?'), findsOneWidget);
+    expect(find.text('Đăng ký khuôn mặt?'), findsOneWidget);
     expect(
-      find.textContaining('API hiện tại vẫn yêu cầu OTP.'),
+      find.textContaining(
+        'máy chủ có thể cho đăng nhập trực tiếp hoặc yêu cầu OTP email.',
+      ),
       findsOneWidget,
     );
     expect(be.calls.where((c) => c['path'] == '/face/enroll'), isEmpty);
@@ -230,7 +308,12 @@ void main() {
     await tester.ensureVisible(find.text('Đăng nhập bằng khuôn mặt'));
     await tester.tap(find.text('Đăng nhập bằng khuôn mặt'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('sau đó xác thực OTP email.'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Máy chủ có thể cho đăng nhập trực tiếp hoặc yêu cầu OTP email.',
+      ),
+      findsOneWidget,
+    );
     expect(be.calls.where((c) => c['path'] == '/auth/face-unlock'), isEmpty);
     expect(be.calls.where((c) => c['path'] == '/health'), hasLength(1));
     await tester.pumpWidget(const SizedBox());
