@@ -8,6 +8,7 @@ import '../core/session.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
 import 'attendance_flow.dart' show currentPosition;
+import 'settings.dart';
 
 class LiveReport extends StatefulWidget {
   final LiveData data;
@@ -244,72 +245,29 @@ class _LiveProfileState extends State<LiveProfile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(
-                Icons.face_retouching_natural,
-                color: forest,
-                size: 30,
-              ),
-              const SizedBox(height: 12),
               Text(
-                'Đăng nhập bằng khuôn mặt',
+                'Cài đặt cá nhân',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 8),
-              Text(
-                d.face['enrolled'] == true
-                    ? 'Đã đăng ký lúc ${dateTimeText(d.face['enrolledAt'])}.'
-                    : 'Chụp một khuôn mặt rõ, đủ sáng để đăng ký.',
-              ),
-              const SizedBox(height: 8),
               const Text(
-                'Đối chiếu ảnh 2D trên máy chủ; đăng nhập vẫn cần OTP email. Không chứng nhận phát hiện người thật.',
-                style: TextStyle(color: muted, fontSize: 12),
+                'Thiết lập khuôn mặt, cỡ chữ, màu nền và cập nhật hồ sơ.',
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  FilledButton.icon(
-                    onPressed: () => widget.act(() async {
-                      if (!await confirm(
-                        context,
-                        'Đồng ý đăng ký khuôn mặt?',
-                        'Ảnh sẽ gửi qua HTTPS tới máy chủ để tạo mẫu khuôn mặt cho tài khoản của bạn. Bạn có thể xóa mẫu tại đây.',
-                      )) {
-                        return;
-                      }
-                      final image = await captureFace();
-                      if (image != null) {
-                        await d.api.request('POST', '/face/enroll', {
-                          'imageBase64': image,
-                        });
-                        if (context.mounted) {
-                          toast(context, 'Đã đăng ký khuôn mặt.');
-                        }
-                      }
-                    }),
-                    icon: const Icon(Icons.camera_alt_outlined),
-                    label: Text(
-                      d.face['enrolled'] == true
-                          ? 'Chụp lại'
-                          : 'Đăng ký khuôn mặt',
+              FilledButton.icon(
+                onPressed: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SettingsPage(session: widget.session),
                     ),
-                  ),
-                  if (d.face['enrolled'] == true)
-                    TextButton(
-                      onPressed: () => widget.act(() async {
-                        if (await confirm(
-                          context,
-                          'Xóa mẫu khuôn mặt?',
-                          'Sau khi xóa, dùng mật khẩu và OTP để đăng nhập.',
-                        )) {
-                          await d.api.request('DELETE', '/face/enroll');
-                        }
-                      }),
-                      child: const Text('Xóa mẫu'),
-                    ),
-                ],
+                  );
+                  if (mounted && widget.session.user != null) {
+                    setState(() => d.user = widget.session.user!);
+                    await widget.act(d.load);
+                  }
+                },
+                icon: const Icon(Icons.settings_outlined),
+                label: const Text('Mở Cài đặt'),
               ),
             ],
           ),

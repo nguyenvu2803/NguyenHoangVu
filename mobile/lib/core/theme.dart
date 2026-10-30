@@ -8,10 +8,11 @@ const muted = Color(0xFF73827C);
 const peach = Color(0xFFF1BE91);
 const line = Color(0xFFE5EAE2);
 
-ThemeData appTheme() => ThemeData(
+ThemeData appTheme({Color background = paper}) => ThemeData(
   useMaterial3: true,
   fontFamily: 'Manrope',
-  scaffoldBackgroundColor: paper,
+  scaffoldBackgroundColor: background,
+  appBarTheme: AppBarTheme(backgroundColor: background),
   colorScheme: ColorScheme.fromSeed(
     seedColor: forest,
     primary: forest,

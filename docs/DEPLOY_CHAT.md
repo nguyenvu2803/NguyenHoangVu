@@ -42,3 +42,7 @@ python3 scripts/check_chat_deployment.py
 ```
 
 Kiểm thử Dart–Express chạy HTTP loopback trong môi trường tách biệt; APK nộp chỉ dùng HTTPS public.
+
+## Bản 1.3
+
+Ngoài chat, triển khai cả migration `006_face_settings.sql`, thay đổi auth/resources/security/app và Cài đặt Flutter. Xem SETTINGS_FACE_LOGIN.md. `/health` cần thêm quickFaceLogin/selfProfile; phiên cũ đăng nhập mật khẩu + OTP lại trước khi thiết lập mặt. Patch `NguyenHoangVu-face-settings-backend.patch` áp dụng sau bản chat 1.2; kiểm tra `git apply --check -p2` tại backend root trước khi áp dụng, không ép đè source khác.

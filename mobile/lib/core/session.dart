@@ -1,23 +1,75 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 import 'api.dart';
+import 'preferences.dart';
 
 class Session extends ChangeNotifier {
   final Api api;
   Json? user;
+  final AppPreferences preferences;
   final storage = const FlutterSecureStorage(
     iOptions: IOSOptions(
       accessibility: KeychainAccessibility.first_unlock_this_device,
     ),
   );
   final biometrics = LocalAuthentication();
-  Session(this.api) {
+  Session(this.api, {AppPreferences? preferences})
+    : preferences = preferences ?? AppPreferences() {
     api.onTokenRotation = syncBiometricToken;
     api.onSessionExpired = clear;
   }
   bool get isAdmin => user?['role'] == 'admin';
   bool get isCustomer => user?['role'] == 'customer';
+
+  String get _faceStorageKey =>
+      'face_device_${sha256.convert(utf8.encode(api.endpoint))}';
+
+  Future<Json?> savedFaceAccount() async {
+    if (api.demo || kIsWeb) return null;
+    final raw = await storage.read(key: _faceStorageKey);
+    if (raw == null) return null;
+    try {
+      final value = Json.from(jsonDecode(raw));
+      if (value['username'] is String && value['deviceKey'] is String) {
+        return value;
+      }
+    } catch (_) {
+      /* Invalid device registration can be replaced in Settings. */
+    }
+    return null;
+  }
+
+  Future<void> saveFaceDevice(Json enrollment) async {
+    if (enrollment['deviceKey'] is! String) {
+      throw ApiException('Máy chủ chưa hỗ trợ đăng nhập khuôn mặt không OTP.');
+    }
+    await storage.write(
+      key: _faceStorageKey,
+      value: jsonEncode({
+        'username': user!['username'],
+        'deviceKey': enrollment['deviceKey'],
+      }),
+    );
+  }
+
+  Future<void> forgetFaceDevice() => storage.delete(key: _faceStorageKey);
+
+  Future<void> unlockWithFace(String image) async {
+    final account = await savedFaceAccount();
+    if (account == null) {
+      throw ApiException(
+        'Đăng nhập mật khẩu và OTP, vào Cài đặt để thiết lập khuôn mặt trên thiết bị này.',
+      );
+    }
+    final result = await api.request('POST', '/auth/face-unlock', {
+      ...account,
+      'imageBase64': image,
+    });
+    await accept(Json.from(result));
+  }
 
   Future<void> accept(Json result) async {
     api.acceptTokens(result);
@@ -121,6 +173,11 @@ class Session extends ChangeNotifier {
 
   Future<void> reloadUser() async {
     user = Json.from(await api.request('GET', '/me'));
+    notifyListeners();
+  }
+
+  Future<void> updateProfile(Json changes) async {
+    user = Json.from(await api.request('PATCH', '/me', changes));
     notifyListeners();
   }
 

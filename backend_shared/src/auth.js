@@ -31,9 +31,12 @@ export function createAuth({ pool, config, mailer, now }) {
     await sendCode(row, user, code);
     return challengeView(row, user);
   }
-  async function sessionTokens(db, user, sessionId = randomUUID()) {
+  async function sessionTokens(db, user, sessionId, authMethod = 'password_otp') {
     const time = now();
-    if (!arguments[2]) await db.query('INSERT INTO sessions(id,user_id,created_at) VALUES($1,$2,$3)', [sessionId, user.id, time]);
+    if (!sessionId) {
+      sessionId = randomUUID();
+      await db.query('INSERT INTO sessions(id,user_id,created_at,auth_method) VALUES($1,$2,$3,$4)', [sessionId, user.id, time, authMethod]);
+    }
     const refreshToken = opaqueToken();
     await db.query('INSERT INTO refresh_tokens(id,session_id,token_hash,expires_at) VALUES($1,$2,$3,$4)', [randomUUID(), sessionId, tokenHash(refreshToken), new Date(time.getTime() + 30 * 86400000)]);
     const issuedAt = Math.floor(time.getTime() / 1000);
@@ -48,10 +51,10 @@ export function createAuth({ pool, config, mailer, now }) {
     try { ({ payload } = await jwtVerify(token, secret, { algorithms: ['HS256'], issuer, audience, currentDate: now(), typ: 'JWT' })); }
     catch { return next(new ApiError(401, 'TOKEN_INVALID', 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn.')); }
     if (!id.safeParse(payload.sub).success || !id.safeParse(payload.sid).success) return next(new ApiError(401, 'TOKEN_INVALID', 'Phiên đăng nhập không hợp lệ.'));
-    const { rows } = await pool.query('SELECT u.* FROM users u JOIN sessions s ON s.user_id=u.id WHERE u.id=$1 AND s.id=$2 AND s.revoked_at IS NULL AND u.deleted_at IS NULL', [payload.sub, payload.sid]);
+    const { rows } = await pool.query('SELECT u.*,s.auth_method FROM users u JOIN sessions s ON s.user_id=u.id WHERE u.id=$1 AND s.id=$2 AND s.revoked_at IS NULL AND u.deleted_at IS NULL', [payload.sub, payload.sid]);
     if (!rows[0]) return next(new ApiError(401, 'SESSION_REVOKED', 'Phiên đăng nhập đã kết thúc.'));
     if (rows[0].status === 'suspended') return next(new ApiError(403, 'ACCOUNT_SUSPENDED', 'Tài khoản đã bị tạm ngưng.'));
-    req.user = rows[0]; req.sessionId = payload.sid; req.tokenExpiresAt = payload.exp * 1000; next();
+    req.user = rows[0]; req.authMethod = rows[0].auth_method; req.sessionId = payload.sid; req.tokenExpiresAt = payload.exp * 1000; next();
   };
   const requireActive = (req, _res, next) => req.user.status === 'active' && req.user.email_verified
     ? next() : next(new ApiError(403, 'ACCOUNT_PENDING', 'Tài khoản đang chờ quản trị viên phê duyệt.'));
@@ -93,7 +96,7 @@ export function createAuth({ pool, config, mailer, now }) {
       }
       await db.query('UPDATE otp_challenges SET consumed_at=$1 WHERE id=$2', [now(), row.id]);
       if (!user.email_verified) user = (await db.query('UPDATE users SET email_verified=true WHERE id=$1 RETURNING *', [user.id])).rows[0];
-      return { data: await sessionTokens(db, user) };
+      return { data: await sessionTokens(db, user, undefined, row.purpose === 'face_login' ? 'face_otp' : 'password_otp') };
     });
     if (outcome.error) throw outcome.error;
     res.json(outcome);
@@ -154,6 +157,21 @@ export function createAuth({ pool, config, mailer, now }) {
     const probe = await recognition.extractEmbedding(input.imageBase64);
     if (!recognition.compareEmbeddings(face.embedding, probe).matches) throw loginFailure();
     res.json({ data: await issueChallenge(user, 'face_login') });
+  });
+  router.post('/face-unlock', rateLimit({ now, max: 10, windowMs: 15 * 60000 }), async (req, res) => {
+    const input = parse(z.object({ username, deviceKey: z.string().regex(/^[A-Za-z0-9_-]{43}$/), imageBase64: z.string().min(16).max(2800000) }).strict(), req.body);
+    const result = await transaction(pool, async db => {
+      // Enrollment, account changes and unlock share user-first locking.
+      const user = (await db.query("SELECT * FROM users WHERE username=$1 AND status='active' AND email_verified=true AND deleted_at IS NULL FOR UPDATE", [input.username])).rows[0];
+      if (!user) throw loginFailure();
+      const face = (await db.query('SELECT * FROM face_templates WHERE user_id=$1 FOR UPDATE', [user.id])).rows[0];
+      if (!face?.device_key_hash || !constantEqual(face.device_key_hash, tokenHash(input.deviceKey))) throw loginFailure();
+      const recognition = await loadFace();
+      const probe = await recognition.extractEmbedding(input.imageBase64);
+      if (!recognition.compareEmbeddings(face.embedding, probe).matches) throw loginFailure();
+      return sessionTokens(db, user, undefined, 'face_device');
+    });
+    res.json({ data: result });
   });
   return { router, requireAuth, requireActive };
 }

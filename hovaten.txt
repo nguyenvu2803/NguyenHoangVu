@@ -20,13 +20,13 @@ CHUC NANG DA XAY DUNG TRONG SOURCE BAN TICH HOP
 3. Mot APK Flutter, ba giao dien: nhan vien/nguoi dung, quan ly chi nhanh va quan tri vien. Phan quyen admin / manager / employee. Dashboard va menu theo vai tro; backend kiem tra quyen. Pending/suspended vao trang trang thai rieng.
 4. CRUD nhan vien, chi nhanh, ca lam; tim kiem; phan ca. CRUD don dieu chinh khi pending, duyet/tu choi boi nguoi co quyen, giu dau vet gio goc. Du lieu co lich su bi gioi han xoa/sua de bao ve bang cong.
 5. Ba chuc nang nang cao:
-   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera; backend YuNet/SFace doi chieu 2D, van yeu cau OTP email. Chua co chung nhan liveness.
+   a. Dang ky/xoa mau khuon mat va dang nhap bang anh camera; lan dau mat khau + OTP, vao Cai dat thiet lap; lan sau thiet bi da dang ky chi quet mat, khong OTP. Backend YuNet/SFace doi chieu 2D va khoa thiet bi bao mat. Chua kiem tra nguoi that; can deploy migration 006 va backend moi.
    b. Chia se mot vi tri GPS hien tai, chon han 15/30/60/120 phut, dung som, xem theo phan quyen va mo ban do; khong theo doi nen.
    c. Tin nhan realtime qua SSE co Bearer token; hoi thoai rieng tu, gioi han theo chi nhanh/admin. Dich tu dong tin den va xem truoc ban nhap Viet/Anh/Trung bang ML Kit tren Android; giu ban goc, tai mo hinh lan dau qua Internet. Khong can API key dich tra phi. Can deploy migration 005 va route chat len backend public truoc khi demo ket noi that.
    QR ca van la tien ich phu, KHONG tinh trong ba chuc nang nang cao da chon.
 6. Cham cong vao/ra ca, GPS trong ban kinh chi nhanh va cua so thoi gian; bao cao thang, xuat CSV, tach gio hieu luc va gio thiet bi goc.
 7. Tinh nang de xuat Nhip can bang: canh bao khoang nghi giua ca duoi 11 gio, ca tren 10 gio, thieu gio vao/ra. Chua khao sat thi truong de khang dinh tat ca app khac chua co.
-8. Giao dien tieng Viet xanh ngoc/kem, font Manrope/Lora dong goi, bo cuc mobile; config HTTPS chung de chay lai.
+8. Giao dien tieng Viet, font Manrope/Lora dong goi, bo cuc mobile. Cai dat doi co chu 85/100/115/130%, bon mau nen, camera doi xung; cap nhat ho ten, dien thoai, gioi thieu qua API. Tuy chon giao dien luu tren thiet bi. Ban 1.3.0+4.
 
 DOI CHIEU YEU CAU VA DIEM DU KIEN
 - Nhom CRUD: muc toi da theo de 4.5 diem.
@@ -38,9 +38,11 @@ DOI CHIEU YEU CAU VA DIEM DU KIEN
 
 BANG CHUNG VA GIOI HAN
 Xem docs/VERIFICATION.md cho so test/build va ket qua thuc te moi nhat.
-Da dang ky va xac thuc OTP email that thanh cong tren APK ket noi API public. Lan xac nhan gan nhat: username hoangvu2380602586 pending, app hien thi cho admin duyet.
+Da dang ky va xac thuc OTP email that thanh cong tren APK ket noi API public. Da tung hien thi man cho duyet; phien sau da thay dashboard nhan vien. Can xac minh phan ca va quyen test hien tai tren API.
 HTTP public health/auth da kiem tra; test Flutter dung fixture va test backend dung pg-mem/mailbox rieng, khong thay nghiem thu OTP that hay PostgreSQL production.
-Chua co tai khoan app active; can chu API chung chuyen active va gan chi nhanh de nghiem thu CRUD/cham cong that. Camera/GPS va doi chieu khuon mat production can nguon anh/vi tri hop le.
-API dang chay la backend chung; sua source cuc bo chua duoc deploy len dich vu chung. Chat realtime moi CHUA hoat dong tren API public cu; xem docs/DEPLOY_CHAT.md de chu API cap nhat. Theo tai lieu upstream, database Free hien tai het han 28/11/2026; can chu dich vu kiem tra truoc ngay cham bai.
+Can chu API chung xac nhan active, gan ca va cap quyen test hop le de nghiem thu CRUD/cham cong that. Camera/GPS va doi chieu khuon mat production can nguon anh/vi tri hop le.
+API dang chay la backend chung; sua source cuc bo chua duoc deploy len dich vu chung. Chat realtime, face-unlock va PATCH /me moi CHUA duoc nghiem thu tren API public cu; xem docs/DEPLOY_CHAT.md de chu API cap nhat. Theo tai lieu upstream, database Free hien tai het han 28/11/2026; can chu dich vu kiem tra truoc ngay cham bai.
 Khong ghi nhan Google OAuth, SMS, NFC, Barcode, Face ID he dieu han la tinh nang da nghiem thu cua ban production nay.
 Chua co link YouTube. Can cap nhat link video that truoc khi nop.
+
+Ban cap nhat 1.3.0+4: xem docs/SETTINGS_FACE_LOGIN.md. API can health features.quickFaceLogin=true va selfProfile=true. Khong coi test tach biet la bang chung da deploy.

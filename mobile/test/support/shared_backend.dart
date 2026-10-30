@@ -11,6 +11,7 @@ class SharedBackend {
   final String role, status;
   SharedBackend({this.role = 'employee', this.status = 'active'});
   final calls = <Json>[];
+  Json profile = {};
   Json get user => {
     'id': userId,
     'fullName': 'Nguyễn Hoàng Vũ',
@@ -20,6 +21,7 @@ class SharedBackend {
     'status': status,
     'branchId': branchId,
     'emailVerified': true,
+    ...profile,
   };
   List<Json> employees = [];
   late List<Json> shifts = [
@@ -101,6 +103,7 @@ class SharedBackend {
     } else if (path == '/auth/logout') {
       result = {'loggedOut': true};
     } else if (path == '/me') {
+      if (request.method == 'PATCH') profile.addAll(body);
       result = user;
     } else if (path == '/dashboard') {
       result = {

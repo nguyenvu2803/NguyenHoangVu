@@ -7,6 +7,7 @@ import 'live_attendance.dart';
 import 'live_manage.dart';
 import 'live_profile.dart';
 import 'chat.dart';
+import 'settings.dart';
 
 class LiveShell extends StatefulWidget {
   final Session session;
@@ -98,7 +99,7 @@ class _LiveShellState extends State<LiveShell> {
     ];
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: paper,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         title: Row(
           children: [
             const Icon(Icons.spa_outlined, color: forest),
@@ -117,6 +118,20 @@ class _LiveShellState extends State<LiveShell> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Cài đặt',
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => SettingsPage(session: widget.session),
+                ),
+              );
+              if (mounted && widget.session.user != null) {
+                await reload(user: true);
+              }
+            },
+            icon: const Icon(Icons.settings_outlined),
+          ),
           IconButton(
             tooltip: 'Tin nhắn · Dịch realtime',
             onPressed: () => Navigator.of(context).push(

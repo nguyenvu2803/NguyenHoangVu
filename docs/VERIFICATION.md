@@ -1,3 +1,29 @@
+# Kết quả mới — 30/10/2026 — bản 1.3.0+4
+
+Bổ sung Cài đặt, đăng nhập khuôn mặt trên thiết bị đã thiết lập và camera đối xứng. Các kết quả dưới đây là kiểm thử source mới; API public vẫn chưa triển khai chức năng mới.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Flutter analyze | No issues found |
+| Flutter test | **36/36 đạt**; thêm lưu giao diện, khóa mặt theo API, đăng nhập không OTP, pixel ảnh gương, đồng hồ OTP, form OTP và Cài đặt 320 px/chữ 130%/ba vai trò |
+| Node backend | **103/103 đạt**; nhận diện YuNet/SFace thật; mặt/khóa sai không đăng nhập, đăng nhập nhanh không gửi email, thay/xóa mẫu thu hồi phiên, reset mật khẩu vô hiệu khóa, phiên legacy không được đăng ký mới, hồ sơ strict schema cho ba vai trò |
+| Dart client → Express thật | **1/1 đạt**, pg-mem/mailbox tách biệt; bổ sung enroll quick → face-unlock → sửa hồ sơ → xóa mẫu/thu hồi phiên; vẫn kiểm tra luồng mặt + OTP cũ |
+| Android camera và secure storage | **1/1 đạt** trên AVD API33: plugin camera thật khởi tạo, xem trước và đổi công tắc gương, tùy chọn được lưu/đọc qua secure storage native. Không chụp/lưu/tải lên khuôn mặt người dùng trong test tự động |
+| Dọn test Android | Runner báo uninstall Broken pipe ở teardown, nhưng assertions đạt; cần cài APK release lại, không dùng màn test để demo |
+| Giao diện Cài đặt | Ảnh `ui-fixture-settings-mobile.png`, fixture rõ phạm vi; không phải hồ sơ production |
+| APK release 1.3.0+4 | Build thành công, 124.9 MB theo Flutter; package vn.nguyenhoangvu.nguyen_hoang_vu, versionCode 4, minSdk 24; cấu hình production giữ HTTPS và ba cờ false |
+| Cài/chạy release Android | Cài APK **Success**, kiểm tra versionName 1.3.0/versionCode 4; đã thấy màn đăng nhập native, ảnh android-release-1.3-login.png. Cold start lần đầu trên AVD 2 GB có timeout ở am start rồi giao diện lên sau; không tính timeout thành đạt tức thì |
+| API public | Health HTTP 200 nhưng `features` chưa có quickFaceLogin/selfProfile/realtimeChat; **chưa deploy** các chức năng mới |
+| OTP đồng hồ lệch | Countdown dùng HTTP Date máy chủ + Stopwatch; form không tự từ chối theo giờ máy. Backend vẫn giữ TTL/giới hạn sai/single-use |
+
+Log: `dist/flutter-settings-analyze.log`, `dist/flutter-settings-all-tests.log`, `dist/backend-settings-all-tests.log`, `dist/client-settings-backend-integration.log`, `dist/android-settings-camera-test.log`, `dist/settings-ui-capture.log`, `dist/android-settings-release-build.log`, `dist/android-settings-release-install.log`.
+
+Cần chủ API deploy migration **006** và backend mới; xem `SETTINGS_FACE_LOGIN.md`. Chưa có bằng chứng quét khuôn mặt người dùng thật, cập nhật hồ sơ hoặc đăng nhập không OTP trên API public. Không dùng test cô lập thay nghiệm thu này.
+
+---
+
+## Kết quả lịch sử bản 1.2
+
 # Kết quả kiểm tra — 29/10/2026 — bản 1.2.0
 
 Bản Flutter 1.2.0+3, Android package `vn.nguyenhoangvu.nguyen_hoang_vu`, nhãn `NguyenHoangVu`. Người nộp: **Nguyễn Hoàng Vũ — 2380602586**. Kết quả dưới đây do bản tích hợp này chạy lại, không sao chép kết luận production của tác giả backend gốc.

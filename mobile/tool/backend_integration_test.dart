@@ -172,6 +172,37 @@ void main() {
       await worker.request('DELETE', '/location-shares/${share['id']}');
       expect(await worker.request('GET', '/location-shares'), isEmpty);
       final image = faceImageBase64(await File(faceFile).readAsBytes());
+      final enrollment = Json.from(
+        await worker.request('POST', '/face/enroll', {
+          'imageBase64': image,
+          'enableQuickLogin': true,
+        }),
+      );
+      final quick = Api(endpoint: endpoint);
+      addTearDown(quick.client.close);
+      final unlocked = Json.from(
+        await quick.request('POST', '/auth/face-unlock', {
+          'username': 'contract_worker',
+          'deviceKey': enrollment['deviceKey'],
+          'imageBase64': image,
+        }),
+      );
+      expect(unlocked['challengeId'], isNull);
+      quick.acceptTokens(unlocked);
+      final updated = await quick.request('PATCH', '/me', {
+        'phone': '0912345678',
+        'bio': 'Contract profile update',
+      });
+      expect(updated['phone'], '0912345678');
+      expect(
+        (await worker.request('GET', '/me'))['bio'],
+        'Contract profile update',
+      );
+      await worker.request('DELETE', '/face/enroll');
+      await expectLater(
+        quick.request('GET', '/me'),
+        throwsA(isA<ApiException>()),
+      );
       await worker.request('POST', '/face/enroll', {'imageBase64': image});
       expect((await worker.request('GET', '/face/status'))['enrolled'], isTrue);
       // Respect the real server's OTP cooldown, including after registration.

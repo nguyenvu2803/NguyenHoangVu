@@ -22,7 +22,7 @@ Source đã có trên GitHub public; hai link frontend/backend mở được kh�
 - **Một APK, ba giao diện theo quyền**: nhân viên/người dùng, quản lý chi nhánh, quản trị viên. Phân quyền **admin / manager / employee**. Admin quản trị toàn bộ; manager quản lý chi nhánh; employee xem dữ liệu cá nhân. Tài khoản pending/suspended có màn hình riêng, không tự nâng quyền.
 - CRUD nhân viên, chi nhánh và ca làm theo quyền. Đơn điều chỉnh công có tạo/sửa/xóa khi pending và duyệt/từ chối bởi người có quyền; giữ lịch sử công gốc.
 - Chấm vào/ra ca bằng GPS mới, kiểm tra bán kính chi nhánh, sai số tối đa 100m, ca được phân và cửa sổ giờ. Máy chủ ghi thời điểm chấm công.
-- **Đăng nhập khuôn mặt qua camera**: đăng ký/xóa mẫu; backend YuNet/SFace đối chiếu ảnh; khớp mặt vẫn yêu cầu OTP email. Đây là nhận diện 2D, chưa có chứng nhận liveness.
+- **Đăng nhập khuôn mặt qua camera**: đăng ký/xóa mẫu; backend YuNet/SFace đối chiếu ảnh; sau mật khẩu + OTP, mở Cài đặt để thiết lập. Thiết bị đã thiết lập có thể quét mặt để đăng nhập không OTP. Khóa thiết bị lưu bảo mật; nhận diện 2D chưa có kiểm tra người thật. Xem [hướng dẫn](docs/SETTINGS_FACE_LOGIN.md).
 - **Chia sẻ vị trí**: lấy một vị trí hiện tại, chọn hạn 15/30/60/120 phút, dừng sớm; admin/manager đọc theo quyền; mở bản đồ khi người dùng chọn. Không theo dõi nền.
 - **Dịch tin nhắn realtime**: hội thoại riêng qua SSE có Bearer token; người nhận trong chi nhánh hoặc admin. ML Kit dịch Việt–Anh–Trung trên Android, tự dịch tin đến và xem trước bản nháp, giữ bản gốc. Tải mô hình lần đầu cần Internet; không cần API key trả phí. **Backend public hiện chưa có route chat mới**; chủ API triển khai theo [DEPLOY_CHAT.md](docs/DEPLOY_CHAT.md).
 - QR là **tiện ích phụ, không tính trong ba chức năng nâng cao đã chọn**: tạo/hiển thị QR ca và quét bằng camera để chọn ca được phân. QR là mã chọn ca, không phải bằng chứng hiện diện hay chữ ký chống sao chép; GPS và phân quyền backend xác thực việc chấm công.
@@ -94,3 +94,7 @@ Backend cần Node.js >=22. Khi cài có thể đặt `ONNXRUNTIME_NODE_INSTALL=
 - [Bảng kiểm thử](docs/QA_INVENTORY.md)
 
 Không đóng gói `.env`, token, mật khẩu, keystore, account Postman riêng hoặc model tải về vào Git/source ZIP.
+
+## Cài đặt bản 1.3.0+4
+
+Cài đặt có cỡ chữ 85–130%, bốn màu nền, camera đối xứng, sửa họ tên/điện thoại/giới thiệu qua API. Xem `docs/SETTINGS_FACE_LOGIN.md` cho luồng quét mặt không OTP, migration 006 và giới hạn. Backend public cũ chưa có tính năng mới khi chưa deploy.

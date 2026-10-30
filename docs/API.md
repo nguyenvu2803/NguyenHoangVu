@@ -32,3 +32,14 @@ QR chỉ chọn ca của người quét, không gọi endpoint `/qr` cũ và kh�
 Source định nghĩa schema chi tiết: `backend_shared/src/resources.js`, `auth.js`, `validation.js`. Module Node.js mới là backend dùng cho bản này; OpenAPI FastAPI cũ ở `docs/legacy/` không áp dụng.
 
 Chat là phần bổ sung trong source, chưa có trên API public cũ. Migration `005_realtime_chat.sql` bổ sung bảng, không sửa migration đã áp dụng. Server kiểm tra cặp người gửi/nhận; admin không đọc được hội thoại giữa hai người khác. Dịch chỉ chạy trên thiết bị, server lưu bản gốc/ngôn ngữ nguồn. SSE kiểm tra lại phiên/quyền mỗi 1.5 giây; mất kết nối client tải phần sau cursor, UUID bảo vệ lần gửi lại sau timeout.
+
+## Bổ sung 1.3 — migration 006
+
+| API | Hợp đồng |
+|---|---|
+| GET `/face/status` | enrolled, enrolledAt, quickLoginEnabled, canEnrollQuickLogin; không trả khóa/embedding |
+| POST `/face/enroll` | imageBase64, enableQuickLogin tùy chọn; phiên password_otp; khi bật trả deviceKey một lần |
+| POST `/auth/face-unlock` | username, deviceKey, imageBase64; khớp mặt và khóa thiết bị thì trả token trực tiếp, không OTP |
+| PATCH `/me` | fullName, phone, bio; ít nhất một trường; strict schema chặn đổi quyền/email/tài khoản |
+
+`/auth/face-login` cũ vẫn dùng OTP. Khóa thiết bị được băm SHA-256, thay/xóa mẫu thu hồi phiên face_device; reset mật khẩu/email hoặc suspended vô hiệu khóa. Xem SETTINGS_FACE_LOGIN.md.

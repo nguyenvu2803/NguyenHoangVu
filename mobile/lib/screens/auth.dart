@@ -2,10 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../core/api.dart';
-import '../core/live.dart';
 import '../core/session.dart';
 import '../core/theme.dart';
 import '../widgets/common.dart';
+import 'face_camera.dart';
 
 class AuthScreen extends StatefulWidget {
   final Session session;
@@ -28,11 +28,14 @@ class _AuthScreenState extends State<AuthScreen> {
   int get seconds =>
       (DateTime.tryParse(
                 challenge?['expiresAt'] ?? '',
-              )?.difference(DateTime.now()).inSeconds ??
+              )?.difference(widget.session.api.serverNow).inSeconds ??
               0)
           .clamp(0, 3600);
   int get cooldown =>
-      (resendAt?.difference(DateTime.now()).inSeconds ?? 0).clamp(0, 3600);
+      (resendAt?.difference(widget.session.api.serverNow).inSeconds ?? 0).clamp(
+        0,
+        3600,
+      );
   @override
   void initState() {
     super.initState();
@@ -51,6 +54,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> run(Future<void> Function() action) async {
+    if (busy) return;
     setState(() {
       busy = true;
       error = null;
@@ -68,7 +72,7 @@ class _AuthScreenState extends State<AuthScreen> {
     if (!mounted) return;
     setState(() {
       challenge = Json.from(value);
-      resendAt = DateTime.now().add(
+      resendAt = widget.session.api.serverNow.add(
         Duration(
           seconds: (challenge!['retryAfterSeconds'] as num?)?.toInt() ?? 60,
         ),
@@ -100,31 +104,44 @@ class _AuthScreenState extends State<AuthScreen> {
     });
   }
 
-  Future<void> faceLogin() async {
+  Future<void> faceLogin() => run(() async {
+    final saved = await widget.session.savedFaceAccount();
+    if (!mounted) return;
+    if (saved != null) {
+      final image = await captureFace(
+        context,
+        mirror: widget.session.preferences.mirrorCamera,
+      );
+      if (image != null) await widget.session.unlockWithFace(image);
+      return;
+    }
     if (!RegExp(
       r'^[a-z0-9][a-z0-9_.]{2,31}$',
     ).hasMatch(username.text.trim().toLowerCase())) {
-      setState(() => error = 'Nhập tên đăng nhập trước khi chụp khuôn mặt.');
-      return;
+      throw ApiException(
+        'Đăng nhập mật khẩu + OTP rồi vào Cài đặt để thiết lập khuôn mặt. Nếu đã đăng ký mặt kiểu cũ, nhập tên đăng nhập để tiếp tục.',
+      );
     }
     if (!await confirm(
       context,
       'Đăng nhập bằng khuôn mặt',
-      'Ảnh chụp sẽ gửi qua HTTPS tới máy chủ để đối chiếu khuôn mặt đã đăng ký. Sau đó vẫn cần OTP email.',
+      'Thiết bị chưa thiết lập đăng nhập nhanh. Ảnh sẽ được đối chiếu trên máy chủ rồi xác thực OTP. Để lần sau chỉ quét mặt, đăng nhập bằng mật khẩu và OTP rồi mở Cài đặt.',
     )) {
       return;
     }
-    await run(() async {
-      final image = await captureFace();
-      if (image == null) return;
-      setChallenge(
-        await widget.session.api.request('POST', '/auth/face-login', {
-          'username': username.text.trim().toLowerCase(),
-          'imageBase64': image,
-        }),
-      );
-    });
-  }
+    if (!mounted) return;
+    final image = await captureFace(
+      context,
+      mirror: widget.session.preferences.mirrorCamera,
+    );
+    if (image == null) return;
+    setChallenge(
+      await widget.session.api.request('POST', '/auth/face-login', {
+        'username': username.text.trim().toLowerCase(),
+        'imageBase64': image,
+      }),
+    );
+  });
 
   Widget field(
     TextEditingController c,
@@ -226,7 +243,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     ? 'Mã 6 số đã gửi đến ${challenge!['maskedEmail']}. Còn ${seconds ~/ 60}:${(seconds % 60).toString().padLeft(2, '0')}.'
                     : register
                     ? 'Đăng ký email, xác thực OTP và chờ quản trị viên duyệt.'
-                    : 'Tên đăng nhập, mật khẩu và OTP email để vào ca.',
+                    : 'Mật khẩu + OTP email, hoặc khuôn mặt đã thiết lập trong Cài đặt.',
                 style: const TextStyle(color: muted),
               ),
               const SizedBox(height: 28),
@@ -253,9 +270,8 @@ class _AuthScreenState extends State<AuthScreen> {
                           labelText: 'OTP email',
                           prefixIcon: Icon(Icons.mark_email_read_outlined),
                         ),
-                        validator: (v) => seconds == 0
-                            ? 'Mã hết hạn. Gửi lại OTP.'
-                            : RegExp(r'^\d{6}$').hasMatch(v ?? '')
+                        // Server checks expiry; a device clock offset must not reject valid OTP.
+                        validator: (v) => RegExp(r'^\d{6}$').hasMatch(v ?? '')
                             ? null
                             : 'Nhập đủ 6 chữ số',
                       ),

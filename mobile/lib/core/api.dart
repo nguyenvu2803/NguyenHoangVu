@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import 'demo.dart';
 
 typedef Json = Map<String, dynamic>;
@@ -33,6 +34,10 @@ class Api {
   Future<void> Function()? onTokenRotation;
   Future<void> Function()? onSessionExpired;
   Future<void>? _refreshing;
+  DateTime? _serverTime;
+  final _serverElapsed = Stopwatch();
+  DateTime get serverNow =>
+      _serverTime?.add(_serverElapsed.elapsed) ?? DateTime.now().toUtc();
   bool get configured {
     final uri = Uri.tryParse(endpoint);
     return uri != null &&
@@ -66,6 +71,20 @@ class Api {
       throw ApiException(
         'Mất kết nối hoặc máy chủ đang khởi động. Tải lại dữ liệu trước khi gửi lại thao tác.',
       );
+    }
+    final serverDate = response.headers['date'];
+    if (serverDate != null) {
+      try {
+        _serverTime = DateFormat(
+          "EEE, dd MMM yyyy HH:mm:ss 'GMT'",
+          'en_US',
+        ).parseUtc(serverDate);
+        _serverElapsed
+          ..reset()
+          ..start();
+      } catch (_) {
+        /* A missing or invalid Date header must not break requests. */
+      }
     }
     if (response.statusCode == 401 &&
         retry &&

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
 import { z, id, name, username, email, password, role, status, isoDate, coordinates, parse, routeId, nonemptyPatch } from './validation.js';
-import { fail, hashPassword, publicUser, transaction } from './security.js';
+import { fail, hashPassword, publicUser, transaction, opaqueToken, tokenHash } from './security.js';
 import { loadFace } from './auth.js';
 import { DEFAULT_TIME_POLICY, timePolicySchema, punchWindow, timingOf, createLocalClock } from './attendance-time.js';
 import { criticalFactSchema, validateCriticalFacts, verifyFactAnswers } from './critical-facts.js';
@@ -133,6 +133,7 @@ export function createResources({ pool, now, timeZone = 'Asia/Bangkok', enqueueN
       if (newPassword) updated = (await db.query('UPDATE users SET password_hash=$1 WHERE id=$2 RETURNING *', [await hashPassword(newPassword), recordId])).rows[0];
       if (input.email && input.email !== employee.email) updated = (await db.query('UPDATE users SET email_verified=false WHERE id=$1 RETURNING *', [recordId])).rows[0];
       if (newPassword || input.email !== undefined || input.status === 'suspended') {
+        await db.query('UPDATE face_templates SET device_key_hash=NULL WHERE user_id=$1', [recordId]);
         await db.query('UPDATE sessions SET revoked_at=$1 WHERE user_id=$2 AND revoked_at IS NULL', [now(), recordId]);
         await db.query('DELETE FROM notification_devices WHERE user_id=$1', [recordId]);
         await db.query('UPDATE otp_challenges SET consumed_at=$1 WHERE user_id=$2 AND consumed_at IS NULL', [now(), recordId]);
@@ -525,19 +526,44 @@ export function createResources({ pool, now, timeZone = 'Asia/Bangkok', enqueueN
     } } });
   });
   router.get('/face/status', async (req, res) => {
-    const { rows } = await pool.query('SELECT enrolled_at FROM face_templates WHERE user_id=$1', [req.user.id]);
-    res.json({ data: { enrolled: Boolean(rows.length), enrolledAt: rows[0]?.enrolled_at ?? null } });
+    const { rows } = await pool.query('SELECT enrolled_at,device_key_hash FROM face_templates WHERE user_id=$1', [req.user.id]);
+    res.json({ data: { enrolled: Boolean(rows.length), enrolledAt: rows[0]?.enrolled_at ?? null,
+      quickLoginEnabled: Boolean(rows[0]?.device_key_hash), canEnrollQuickLogin: req.authMethod === 'password_otp' } });
   });
   router.post('/face/enroll', async (req, res) => {
-    const input = parse(z.object({ imageBase64: z.string().min(16).max(2800000) }).strict(), req.body);
+    const input = parse(z.object({ imageBase64: z.string().min(16).max(2800000), enableQuickLogin: z.boolean().optional() }).strict(), req.body);
+    if (req.authMethod !== 'password_otp') fail(403, 'PASSWORD_OTP_REQUIRED', 'Đăng nhập lại bằng mật khẩu và OTP trước khi thiết lập khuôn mặt.');
     const recognition = await loadFace();
     const embedding = await recognition.extractEmbedding(input.imageBase64);
-    const result = await pool.query('INSERT INTO face_templates(user_id,embedding,enrolled_at) VALUES($1,$2,$3) ON CONFLICT(user_id) DO UPDATE SET embedding=EXCLUDED.embedding,enrolled_at=EXCLUDED.enrolled_at RETURNING enrolled_at', [req.user.id, JSON.stringify(embedding), now()]);
-    res.status(201).json({ data: { enrolled: true, enrolledAt: result.rows[0].enrolled_at } });
+    const deviceKey = input.enableQuickLogin ? opaqueToken() : null;
+    const enrolledAt = await transaction(pool, async db => {
+      const user = await find(db, 'users', req.user.id, true);
+      const session = await find(db, 'sessions', req.sessionId, true);
+      if (user.status !== 'active' || !user.email_verified || user.deleted_at || session.revoked_at) fail(401, 'SESSION_REVOKED', 'Phiên đăng nhập đã kết thúc.');
+      const result = await db.query('INSERT INTO face_templates(user_id,embedding,enrolled_at,device_key_hash) VALUES($1,$2,$3,$4) ON CONFLICT(user_id) DO UPDATE SET embedding=EXCLUDED.embedding,enrolled_at=EXCLUDED.enrolled_at,device_key_hash=EXCLUDED.device_key_hash RETURNING enrolled_at', [req.user.id, JSON.stringify(embedding), now(), deviceKey ? tokenHash(deviceKey) : null]);
+      await revokeFaceSessions(db, req.user.id);
+      return result.rows[0].enrolled_at;
+    });
+    res.status(201).json({ data: { enrolled: true, enrolledAt, quickLoginEnabled: Boolean(deviceKey), ...(deviceKey ? { deviceKey } : {}) } });
   });
+  async function revokeFaceSessions(db, userId) {
+    await db.query("UPDATE sessions SET revoked_at=$1 WHERE user_id=$2 AND auth_method='face_device' AND revoked_at IS NULL", [now(), userId]);
+    await db.query('DELETE FROM notification_devices WHERE session_id IN (SELECT id FROM sessions WHERE user_id=$1 AND revoked_at IS NOT NULL)', [userId]);
+  }
   router.delete('/face/enroll', async (req, res) => {
-    await pool.query('DELETE FROM face_templates WHERE user_id=$1', [req.user.id]);
+    await transaction(pool, async db => {
+      await find(db, 'users', req.user.id, true);
+      await db.query('DELETE FROM face_templates WHERE user_id=$1', [req.user.id]);
+      await revokeFaceSessions(db, req.user.id);
+    });
     res.json({ data: { enrolled: false, enrolledAt: null } });
+  });
+  router.patch('/me', async (req, res) => {
+    const input = parse(z.object({ fullName: name.optional(), phone: z.string().trim().max(20).regex(/^[+()0-9 .-]*$/).optional(), bio: z.string().trim().max(300).optional() }).strict().refine(value => Object.keys(value).length > 0), req.body);
+    const result = await pool.query('UPDATE users SET full_name=COALESCE($1,full_name),phone=COALESCE($2,phone),bio=COALESCE($3,bio) WHERE id=$4 AND deleted_at IS NULL RETURNING *',
+      [input.fullName ?? null, input.phone ?? null, input.bio ?? null, req.user.id]);
+    if (!result.rows[0]) notFound();
+    res.json({ data: publicUser(result.rows[0]) });
   });
   router.get('/dashboard', async (req, res) => {
     const [employees, shifts, attendance] = await Promise.all([employeeScope(pool, req.user), shiftsScope(pool, req.user), attendanceScope(pool, req.user)]);

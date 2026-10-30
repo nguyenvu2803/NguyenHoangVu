@@ -7,6 +7,7 @@ import { newDb } from 'pg-mem';
 import { createApp } from '../src/app.js';
 import { PushDeliveryError } from '../src/fcm.js';
 import { createNotifications } from '../src/notifications.js';
+import { tokenHash } from '../src/security.js';
 
 let pool, app, mail, timestamp, serial, pushes, pushError;
 const password = 'A-long-test-password-29';
@@ -518,6 +519,68 @@ test('face enrollment and login use actual recognition and still require email O
   assert.equal(verified.body.data.user.id, user.id);
   assert.equal((await api().delete('/v1/face/enroll').set(auth(user.accessToken))).status, 200);
   assert.equal((await api().get('/v1/face/status').set(auth(user.accessToken))).body.data.enrolled, false);
+
+  const quick = await api().post('/v1/face/enroll').set(auth(user.accessToken)).send({ imageBase64: target, enableQuickLogin: true });
+  assert.equal(quick.status, 201);
+  const deviceKey = quick.body.data.deviceKey;
+  assert.match(deviceKey, /^[A-Za-z0-9_-]{43}$/);
+  const stored = (await pool.query('SELECT device_key_hash FROM face_templates WHERE user_id=$1', [user.id])).rows[0];
+  assert.notEqual(stored.device_key_hash, deviceKey);
+  const status = await api().get('/v1/face/status').set(auth(user.accessToken));
+  assert.equal(status.body.data.quickLoginEnabled, true);
+  assert.equal(status.body.data.deviceKey, undefined);
+  const payload = { username: user.username, deviceKey, imageBase64: same };
+  const emails = mail.length;
+  assert.equal((await api().post('/v1/auth/face-unlock').send({ ...payload, deviceKey: 'x'.repeat(43) })).status, 401);
+  assert.equal((await api().post('/v1/auth/face-unlock').send({ ...payload, imageBase64: different })).status, 401);
+  assert.equal((await api().post('/v1/auth/face-unlock').send({ username: user.username, imageBase64: same })).status, 422);
+  const direct = await api().post('/v1/auth/face-unlock').send(payload);
+  assert.equal(direct.status, 200);
+  assert.equal(direct.body.data.user.id, user.id);
+  assert.ok(direct.body.data.accessToken);
+  assert.equal(direct.body.data.challengeId, undefined);
+  assert.equal(mail.length, emails, 'Quick login never sends OTP');
+  const faceAuth = auth(direct.body.data.accessToken);
+  assert.equal((await api().get('/v1/me').set(faceAuth)).status, 200);
+  assert.equal((await api().post('/v1/face/enroll').set(faceAuth).send({ imageBase64: target, enableQuickLogin: true })).body.error.code, 'PASSWORD_OTP_REQUIRED');
+  const rotated = await api().post('/v1/auth/refresh').send({ refreshToken: direct.body.data.refreshToken });
+  assert.equal(rotated.status, 200);
+  assert.equal((await api().get('/v1/face/status').set(auth(rotated.body.data.accessToken))).body.data.canEnrollQuickLogin, false);
+  await pool.query("UPDATE users SET status='suspended' WHERE id=$1", [user.id]);
+  assert.equal((await api().post('/v1/auth/face-unlock').send(payload)).status, 401);
+  await pool.query("UPDATE users SET status='active' WHERE id=$1", [user.id]);
+  const replacement = await api().post('/v1/face/enroll').set(auth(user.accessToken)).send({ imageBase64: target, enableQuickLogin: true });
+  assert.equal(replacement.status, 201);
+  assert.equal((await api().get('/v1/me').set(faceAuth)).status, 401);
+  assert.equal((await api().post('/v1/auth/face-unlock').send(payload)).status, 401);
+  const second = await api().post('/v1/auth/face-unlock').send({ ...payload, deviceKey: replacement.body.data.deviceKey });
+  assert.equal(second.status, 200);
+  await api().delete('/v1/face/enroll').set(auth(user.accessToken));
+  assert.equal((await api().get('/v1/me').set(auth(second.body.data.accessToken))).status, 401);
+  assert.equal((await api().post('/v1/auth/face-unlock').send({ ...payload, deviceKey: replacement.body.data.deviceKey })).status, 401);
+});
+test('self profile supports three roles without changing email, permissions or another account', async () => {
+  for (const role of ['employee', 'manager', 'admin']) {
+    const user = await account({ role });
+    const patch = { fullName: 'Nguyễn Hoàng Vũ', phone: '+84 912 345 678', bio: 'Ca sáng · Hỗ trợ đội ngũ' };
+    const result = await api().patch('/v1/me').set(auth(user.accessToken)).send(patch);
+    assert.equal(result.status, 200);
+    for (const [key, value] of Object.entries(patch)) assert.equal(result.body.data[key], value);
+    assert.equal(result.body.data.role, role);
+    const partial = await api().patch('/v1/me').set(auth(user.accessToken)).send({ bio: '' });
+    assert.equal(partial.body.data.fullName, patch.fullName);
+    assert.equal(partial.body.data.phone, patch.phone);
+    assert.equal(partial.body.data.bio, '');
+    const read = await api().get('/v1/me').set(auth(user.accessToken));
+    assert.equal(read.body.data.fullName, patch.fullName);
+    assert.equal(read.body.data.passwordHash, undefined);
+    for (const forbidden of [{ role: 'admin' }, { status: 'active' }, { branchId: randomUUID() }, { email: 'new@example.test' }, { id: randomUUID() }, {}, { phone: 'abc' }, { fullName: 'x' }, { bio: 'x'.repeat(301) }]) {
+      assert.equal((await api().patch('/v1/me').set(auth(user.accessToken)).send(forbidden)).status, 422);
+    }
+  }
+  const pending = await account({ status: 'pending' });
+  assert.equal((await api().patch('/v1/me').set(auth(pending.accessToken)).send({ fullName: 'Denied User' })).status, 403);
+  assert.equal((await api().patch('/v1/me').send({ fullName: 'Denied User' })).status, 401);
 });
 test('malformed face input returns a safe validation error rather than an internal stack trace', async () => {
   const user = await account();
@@ -525,6 +588,25 @@ test('malformed face input returns a safe validation error rather than an intern
   assert.equal(result.status, 422);
   assert.equal(result.body.error.code, 'FACE_IMAGE_INVALID');
   assert.equal(result.body.error.stack, undefined);
+});
+test('legacy sessions cannot set up quick face login without a new password and OTP login', async () => {
+  const user = await account();
+  await pool.query("UPDATE sessions SET auth_method='legacy' WHERE user_id=$1", [user.id]);
+  const status = await api().get('/v1/face/status').set(auth(user.accessToken));
+  assert.equal(status.body.data.canEnrollQuickLogin, false);
+  const result = await api().post('/v1/face/enroll').set(auth(user.accessToken)).send({ imageBase64: 'x'.repeat(100), enableQuickLogin: true });
+  assert.equal(result.status, 403);
+  assert.equal(result.body.error.code, 'PASSWORD_OTP_REQUIRED');
+});
+test('admin password reset revokes quick face device key as well as existing sessions', async () => {
+  const admin = await account({ role: 'admin' }), employee = await account();
+  const deviceKey = 'k'.repeat(43);
+  await pool.query('INSERT INTO face_templates(user_id,embedding,enrolled_at,device_key_hash) VALUES($1,$2,$3,$4)', [employee.id, '[]', new Date(timestamp), tokenHash(deviceKey)]);
+  const result = await api().patch(`/v1/employees/${employee.id}`).set(auth(admin.accessToken)).send({ password: 'Changed-test-password-30' });
+  assert.equal(result.status, 200);
+  assert.equal((await pool.query('SELECT device_key_hash FROM face_templates WHERE user_id=$1', [employee.id])).rows[0].device_key_hash, null);
+  assert.equal((await api().get('/v1/me').set(auth(employee.accessToken))).status, 401);
+  assert.equal((await api().post('/v1/auth/face-unlock').send({ username: employee.username, deviceKey, imageBase64: 'x'.repeat(100) })).status, 401);
 });
 test('dashboard counts the local workday across a UTC midnight', async () => {
   timestamp = Date.parse('2026-10-28T23:30:00Z');

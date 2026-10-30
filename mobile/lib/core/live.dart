@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'api.dart';
 
@@ -83,17 +82,6 @@ String faceImageBase64(List<int> bytes) {
       bytes.take(8).join(',') == '137,80,78,71,13,10,26,10';
   if (!jpeg && !png) throw ApiException('Chỉ nhận ảnh JPEG hoặc PNG.');
   return base64Encode(bytes);
-}
-
-Future<String?> captureFace() async {
-  final image = await ImagePicker().pickImage(
-    source: ImageSource.camera,
-    preferredCameraDevice: CameraDevice.front,
-    maxWidth: 1024,
-    maxHeight: 1024,
-    imageQuality: 85,
-  );
-  return image == null ? null : faceImageBase64(await image.readAsBytes());
 }
 
 class LiveData {

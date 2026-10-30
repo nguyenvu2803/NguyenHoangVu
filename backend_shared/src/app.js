@@ -24,7 +24,7 @@ export function createApp({ pool, config, mailer, now = () => new Date(), pushPr
     next();
   });
   app.get(['/health','/v1/health'], async (_req, res) => {
-    try { await pool.query('SELECT 1'); res.json({ data: { status: 'ok', service: 'attendance-api', features: { realtimeChat: true } } }); }
+    try { await pool.query('SELECT 1'); res.json({ data: { status: 'ok', service: 'attendance-api', features: { realtimeChat: true, quickFaceLogin: true, selfProfile: true } } }); }
     catch { res.status(503).json({ error: { code: 'DATABASE_UNAVAILABLE', message: 'Cơ sở dữ liệu chưa sẵn sàng.' } }); }
   });
   const auth = createAuth({ pool, config, mailer, now });
