@@ -1,4 +1,20 @@
-# Kết quả mới — 30/10/2026 — bản 1.3.2+6
+# Backend khôi phục và bổ sung — 15/11/2026 — backend 1.3.3
+
+Đã khôi phục source từ GitHub vào Downloads vì thư mục local cũ không còn. Flutter giữ bản 1.3.2+6. Backend Node.js hiện có đầy đủ source/migration/model loader/test; bổ sung Swagger UI và OpenAPI **37 path / 56 operation**, Dockerfile, runner PostgreSQL thật và gói backend độc lập.
+
+| Kiểm tra | Kết quả |
+|---|---|
+| Node test | **106/106 đạt**, không skip; gồm model mặt thật và 3 regression Swagger |
+| PostgreSQL 17 thật | **13/13 kiểm tra đạt**: migration/idempotency, bootstrap/password/OTP/JWT, ba vai trò/CRUD, concurrent check-in chống trùng, correction giữ giờ gốc, vị trí, chat/SSE, face device không OTP và thu hồi, hồ sơ đọc lại/báo cáo, refresh replay |
+| Docker/Linux | Build thành công; server chạy migration và khởi động, Swagger/health/OpenAPI 200, route bảo vệ 401; ONNX CPU trích xuất 128 chiều thành công |
+| Swagger | UI public `/docs/`; `/v1` chuyển hướng tới UI sau khi deploy source mới. Business routes vẫn yêu cầu JWT và quyền |
+| Phạm vi | PostgreSQL test riêng, mailbox test, ảnh OpenCV và GPS payload. Không thay bằng chứng camera/GPS/email thật hoặc deployment API chung |
+
+Xem `backend_shared/docs/NGUYENHOANGVU_BACKEND.md`. Log riêng: `dist/backend-full-tests.log`, `dist/backend-postgres-tests.log`, `dist/backend-docker-build.log`. Phiên dịch trên app public vẫn chưa hoàn thành; không thay đổi điểm tự chấm vì có thêm test backend. Không triển khai OAuth/SMS/liveness trong bản này.
+
+---
+
+## Kết quả Flutter lịch sử — 30/10/2026 — bản 1.3.2+6
 
 Lỗi quan sát được: app mở form OTP với email `null`, hạn `0:00` sau đăng nhập mặt. Source upstream hiện trả `accessToken`, `refreshToken`, `user` trực tiếp từ `/auth/face-login`; app 1.3.1 luôn coi phản hồi là challenge. Bản 1.3.2 chấp nhận phiên trực tiếp, chỉ mở form khi có challenge OTP hợp lệ. Không cần thay mẫu mặt để sửa lỗi xử lý phản hồi này.
 

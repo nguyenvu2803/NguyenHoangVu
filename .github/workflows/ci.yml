@@ -3,6 +3,18 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: attendance
+          POSTGRES_DB: attendance_test
+          POSTGRES_PASSWORD: ci-only-disposable-postgres-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U attendance -d attendance_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,6 +30,11 @@ jobs:
         working-directory: backend_shared
       - run: npm test
         working-directory: backend_shared
+      - run: npm run test:postgres
+        working-directory: backend_shared
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://attendance:ci-only-disposable-postgres-password@127.0.0.1:5432/attendance_test
   flutter:
     runs-on: ubuntu-latest
     steps:

@@ -14,6 +14,8 @@
 
 Source đã có trên GitHub public; hai link frontend/backend mở được không cần đăng nhập. Trạng thái kiểm tra thực tế nằm trong [VERIFICATION.md](docs/VERIFICATION.md). Video bổ sung sau khi quay, tải lên và kiểm tra quyền xem.
 
+**Backend khôi phục và kiểm tra 15/11/2026:** source đầy đủ ở `backend_shared/`, bản 1.3.3; thêm Swagger `/docs/`, OpenAPI toàn bộ route, Dockerfile và runner PostgreSQL thật. Xem [bàn giao backend](backend_shared/docs/NGUYENHOANGVU_BACKEND.md). `python3 scripts/package_backend.py` tạo ZIP backend riêng, không chứa secret/model/dependency. Dịch vụ public chung vẫn cần chủ API deploy bản mới.
+
 <img src="docs/android-production-login.png" alt="APK production trên máy ảo Android 13" width="320">
 
 ## Chức năng bản tích hợp

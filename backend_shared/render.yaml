@@ -1,8 +1,9 @@
-# Backend-only repository root. Manual Web Service setup is preferred for the
-# existing database nguyen-hoai-nam-2380601398-db; this file creates no second DB.
+# Use when deploying this folder as a standalone backend repository.
+# For the monorepo use ../render.yaml (rootDir: backend_shared).
+# Creates no database; supply an existing PostgreSQL connection securely.
 services:
   - type: web
-    name: nguyen-hoai-nam-2380601398-api
+    name: nguyenhoangvu-api
     runtime: node
     plan: free
     buildCommand: npm ci && npm run models:fetch
@@ -12,13 +13,13 @@ services:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
-        value: 24.14.0
+        value: "24"
       - key: ONNXRUNTIME_NODE_INSTALL
         value: skip
       - key: TRUST_PROXY
         value: "true"
       - key: APP_TIME_ZONE
-        value: Asia/Bangkok
+        value: Asia/Ho_Chi_Minh
       - key: DATABASE_SSL
         value: "true"
       - key: DATABASE_URL

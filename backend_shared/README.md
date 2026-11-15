@@ -1,4 +1,34 @@
-# Backend chấm công — Nguyễn Hoài Nam, 2380601398, nhóm 8
+# Backend NguyenHoangVu — Nguyễn Hoàng Vũ, 2380602586
+
+Bản source **1.3.3**, Node.js 22+ / Express / PostgreSQL. Đây là backend dùng cho Flutter trong `../mobile`, không phải thư mục FastAPI cũ `../backend`.
+
+**Đọc trước:** [Bàn giao backend và đối chiếu yêu cầu](docs/NGUYENHOANGVU_BACKEND.md). Backend được phát triển tiếp từ source nhóm 8 của Nguyễn Hoài Nam; xem [nguồn và thay đổi](INTEGRATION_NGUYENHOANGVU.md).
+
+```sh
+cd backend_shared
+ONNXRUNTIME_NODE_INSTALL=skip npm ci
+npm run models:fetch
+node tool/setup-env.js
+# Điền cấu hình PostgreSQL và email thật trong .env, rồi:
+npm start
+```
+
+`npm start` tự chạy 6 migration, tạo admin đầu tiên khi cấu hình đủ, sau đó mở API. Không có mật khẩu hoặc OTP mặc định. Không sửa SQL migration đã áp dụng.
+
+- Swagger UI: `/docs/`; mở `/v1` sẽ chuyển đến Swagger sau khi deploy bản này.
+- OpenAPI 3.1: `/openapi.json`; asset Swagger đi cùng package, không tải CDN.
+- Health: `/v1/health` kiểm tra cả kết nối PostgreSQL.
+- API: `/v1`; đăng nhập mật khẩu + OTP email, JWT Bearer, quyền admin/manager/employee.
+- `npm test`: kiểm thử backend tách biệt; cần tải model trước.
+- `NODE_ENV=test TEST_DATABASE_URL=... npm run test:postgres`: 13 kiểm tra với PostgreSQL thật. Chỉ dùng database riêng có tên kết thúc `_qa` hoặc `_test`; runner tạo/dọn schema riêng. Không gửi email thật.
+- `npm run docs:build`: xuất trang Swagger chỉ đọc vào `../dist/swagger-site`.
+- `Dockerfile` dùng Node.js 24, CPU ONNX, tải/kiểm tra model lúc build. Biến môi trường thật chỉ cấp lúc chạy/deploy.
+
+API public chung không tự cập nhật khi source local thay đổi. Cần chủ Render deploy source này để có Swagger/chat/hồ sơ/khóa mặt mới. Phiên dịch ML Kit thuộc Flutter; chưa nghiệm thu luồng phiên dịch trên app public. Không nhận là đã hoàn thành chức năng đó chỉ vì backend có chat.
+
+## Tài liệu cấu hình từ backend gốc
+
+Phần dưới giữ hướng dẫn nền của tác giả upstream. Trong repository cá nhân này, thư mục chạy đúng là **`backend_shared`**; Render Root Directory là **`backend_shared`** theo `../render.yaml`. Tên database/dịch vụ của nhóm 8 là thông tin lịch sử, không phải tài nguyên mới đã được tạo cho cá nhân.
 
 API Node.js/PostgreSQL dành cho app Flutter. Chỉ triển khai trên dịch vụ có HTTPS để nộp bài; app không được cấu hình API localhost. README mô tả source, cấu hình và bằng chứng kiểm chứng; trạng thái API/email production cần đối chiếu với kết quả triển khai thực tế.
 

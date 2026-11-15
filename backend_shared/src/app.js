@@ -4,6 +4,7 @@ import { createAuth } from './auth.js';
 import { createResources } from './resources.js';
 import { createNotifications } from './notifications.js';
 import { createChat } from './chat.js';
+import { mountSwagger } from './swagger.js';
 
 export function createApp({ pool, config, mailer, now = () => new Date(), pushProvider, autoStartNotifications = false }) {
   const app = express();
@@ -19,6 +20,7 @@ export function createApp({ pool, config, mailer, now = () => new Date(), pushPr
   });
   app.use(rateLimit({ now, max: 500 }));
   app.use(express.json({ limit: '3mb', strict: true }));
+  mountSwagger(app);
   if (autoStartNotifications) app.use((req, res, next) => {
     if (['POST','PATCH'].includes(req.method)) res.once('finish', () => { if (res.statusCode < 400) notifications.kick(); });
     next();
