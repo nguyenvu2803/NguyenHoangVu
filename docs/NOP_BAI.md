@@ -5,6 +5,7 @@
 | Link GitHub chứa frontend Flutter | https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/mobile |
 | Link GitHub chứa backend | https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/backend_shared |
 | Link API | https://nguyen-hoai-nam-2380601398-api.onrender.com/v1 |
+| Swagger tài liệu source | https://nguyenvu2803.github.io/NguyenHoangVu/ — chỉ đọc, Try it out tắt vì API chung chưa hỗ trợ CORS |
 | Link YouTube demo | CHUA_CO_LINK — chủ bài cần quay và tải video thật |
 | File cá nhân | `hovaten.txt` tại root source |
 | APK Android | `dist/NguyenHoangVu.apk` trong gói bàn giao |

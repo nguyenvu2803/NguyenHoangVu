@@ -10,6 +10,7 @@
 | Backend tích hợp | https://github.com/nguyenvu2803/NguyenHoangVu/tree/main/backend_shared |
 | API public | https://nguyen-hoai-nam-2380601398-api.onrender.com/v1 |
 | Health public | https://nguyen-hoai-nam-2380601398-api.onrender.com/v1/health |
+| Swagger tài liệu source | https://nguyenvu2803.github.io/NguyenHoangVu/ — chỉ đọc; API chung chưa hỗ trợ CORS |
 | Video YouTube | Chưa có; chủ bài sẽ quay và tải lên theo `docs/KICH_BAN_VIDEO.md` |
 
 Source đã có trên GitHub public; hai link frontend/backend mở được không cần đăng nhập. Trạng thái kiểm tra thực tế nằm trong [VERIFICATION.md](docs/VERIFICATION.md). Video bổ sung sau khi quay, tải lên và kiểm tra quyền xem.

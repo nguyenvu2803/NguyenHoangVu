@@ -47,6 +47,8 @@ FCM tùy chọn; thiếu cấu hình thì tắt và báo rõ, không ảnh hư�
 
 ## Mở và thử Swagger
 
+Swagger tài liệu source đã public và kiểm tra hiển thị: https://nguyenvu2803.github.io/NguyenHoangVu/ . Trang này chỉ đọc vì API chung chưa hỗ trợ CORS; không phải bằng chứng đã deploy backend mới lên Render. GitHub Actions `Publish Swagger UI` run `43697941710` đã thành công.
+
 Sau khi backend chạy/deploy, truy cập `/docs/` trên cùng host API. `/v1` chuyển hướng đến trang này. Tài liệu không cần đăng nhập, endpoint nghiệp vụ vẫn yêu cầu quyền.
 
 1. `GET /health` → Try it out → Execute: xác nhận database hoạt động.
